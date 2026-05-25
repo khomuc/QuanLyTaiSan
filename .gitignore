@@ -2,6 +2,11 @@
 /dist
 /node_modules
 /build
+/frontend/dist
+/frontend/node_modules
+/frontend/*.tsbuildinfo
+/frontend/vite.config.d.ts
+/frontend/vite.config.js
 
 # Logs
 logs

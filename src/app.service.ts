@@ -1,27 +1,28 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Connection } from 'mysql2/promise'; // Import kiểu dữ liệu để code gợi ý tốt hơn
+import { Inject, Injectable } from '@nestjs/common';
+import type { Pool } from 'mysql2/promise';
+import { MYSQL_CONNECTION } from './common/constants';
 
 @Injectable()
 export class AppService {
-  constructor(
-    // Gọi kết nối MySQL mà chúng ta đã khởi tạo ở DatabaseModule
-    @Inject('MYSQL_CONNECTION') 
-    private readonly dbConnection: Connection,
-  ) {}
+  constructor(@Inject(MYSQL_CONNECTION) private readonly dbConnection: Pool) {}
 
-  // Ví dụ lấy danh sách tài sản bằng Raw SQL
-  async getDanhSachTaiSan() {
-    // Viết câu lệnh SQL trực tiếp
-    const [rows, fields] = await this.dbConnection.query('SELECT * FROM tai_san');
-    
-    return rows; // Trả về kết quả
+  getHealth() {
+    return {
+      status: 'ok',
+      service: 'quan-ly-tai-san-api',
+      timestamp: new Date().toISOString(),
+    };
   }
 
-  // Ví dụ thêm tài sản mới
+  async getDanhSachTaiSan() {
+    const [rows] = await this.dbConnection.query('SELECT * FROM TAI_SAN');
+    return rows;
+  }
+
   async themTaiSan(maQr: string, tenTaiSan: string) {
-    const query = 'INSERT INTO tai_san (maQr, tenTaiSan) VALUES (?, ?)';
+    const query = 'INSERT INTO TAI_SAN (MaQR, TenTaiSan) VALUES (?, ?)';
     const [result] = await this.dbConnection.execute(query, [maQr, tenTaiSan]);
-    
+
     return result;
   }
 }

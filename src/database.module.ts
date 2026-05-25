@@ -1,32 +1,36 @@
-import { Module, Global } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import * as mysql from 'mysql2/promise';
+import { MYSQL_CONNECTION } from './common/constants';
 
-@Global() // Đánh dấu Global để dùng kết nối này ở mọi nơi mà không cần import lại module
+@Global()
 @Module({
   providers: [
     {
-      provide: 'MYSQL_CONNECTION', // Tên định danh của kết nối
+      provide: MYSQL_CONNECTION,
       useFactory: async () => {
         try {
-          const connection = await mysql.createConnection({
-            host: '34.44.235.59',
-            user: 'root',
-            password: 'Ct555_2026', // Điền password của bạn
-            database: 'quan_ly_tai_san_qr',
-            // Thêm 3 dòng này để Google Cloud cho phép kết nối
+          const pool = mysql.createPool({
+            host: process.env.DB_HOST ?? '34.44.235.59',
+            user: process.env.DB_USER ?? 'root',
+            password: process.env.DB_PASSWORD ?? 'Ct555_2026',
+            database: process.env.DB_NAME ?? 'quan_ly_tai_san_qr',
+            waitForConnections: true,
+            connectionLimit: Number(process.env.DB_CONNECTION_LIMIT ?? 10),
             ssl: {
               rejectUnauthorized: false,
             },
           });
-          console.log('Đã kết nối MySQL thành công!');
-          return connection;
+
+          await pool.query('SELECT 1');
+          console.log('MySQL pool connected successfully');
+          return pool;
         } catch (error) {
-          console.error('Lỗi kết nối MySQL:', error);
+          console.error('MySQL connection error:', error);
           throw error;
         }
       },
     },
   ],
-  exports: ['MYSQL_CONNECTION'], // Xuất ra để các file khác có thể sử dụng
+  exports: [MYSQL_CONNECTION],
 })
 export class DatabaseModule {}

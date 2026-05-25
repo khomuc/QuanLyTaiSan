@@ -1,0 +1,25 @@
+import {
+  ArrayUnique,
+  IsArray,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
+
+export class UpdateRoleDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  tenVaiTro?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  moTa?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  maQuyen?: string[];
+}
