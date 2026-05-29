@@ -1,13 +1,18 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Connection } from 'mysql2/promise'; // Import kiểu dữ liệu để code gợi ý tốt hơn
+import { Inject, Injectable } from '@nestjs/common';
+import type { Pool } from 'mysql2/promise';
+import { MYSQL_CONNECTION } from './common/constants';
 
 @Injectable()
 export class AppService {
-  constructor(
-    // Gọi kết nối MySQL mà chúng ta đã khởi tạo ở DatabaseModule
-    @Inject('MYSQL_CONNECTION') 
-    private readonly dbConnection: Connection,
-  ) {}
+  constructor(@Inject(MYSQL_CONNECTION) private readonly dbConnection: Pool) {}
+
+  getHealth() {
+    return {
+      status: 'ok',
+      service: 'quan-ly-tai-san-api',
+      timestamp: new Date().toISOString(),
+    };
+  }
 
   // Ví dụ lấy danh sách tài sản bằng Raw SQL
   async getDanhSachTaiSan() {

@@ -4,13 +4,15 @@ import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
-  let appService: { getDanhSachTaiSan: jest.Mock };
+  const appService = {
+    getHealth: jest.fn().mockReturnValue({
+      status: 'ok',
+      service: 'quan-ly-tai-san-api',
+      timestamp: '2026-05-17T00:00:00.000Z',
+    }),
+  };
 
   beforeEach(async () => {
-    appService = {
-      getDanhSachTaiSan: jest.fn().mockResolvedValue([{ MaTaiSan: 'TS0001' }]),
-    };
-
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [
@@ -25,9 +27,12 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return asset rows from AppService', async () => {
-      await expect(appController.getHello()).resolves.toEqual([{ MaTaiSan: 'TS0001' }]);
-      expect(appService.getDanhSachTaiSan).toHaveBeenCalledTimes(1);
+    it('should return health status', () => {
+      expect(appController.getHealth()).toEqual({
+        status: 'ok',
+        service: 'quan-ly-tai-san-api',
+        timestamp: '2026-05-17T00:00:00.000Z',
+      });
     });
   });
 });
