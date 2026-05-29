@@ -75,6 +75,14 @@ describe('TransferService', () => {
         return [[]];
       }
 
+      if (sql.includes('FROM PHONG_BAN')) {
+        return [[{ MaPhongBan: 'PB02', TenPhongBan: 'Khoa Lý luận cơ sở' }]];
+      }
+
+      if (sql.includes('FROM NHAN_VIEN')) {
+        return [[{ MaNhanVien: 'NV0001', HoTen: 'Hiệu trưởng' }]];
+      }
+
       return [[]];
     });
 
