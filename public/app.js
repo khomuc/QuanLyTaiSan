@@ -88,7 +88,7 @@ function setupSearchPicker(container, config) {
           if (value) params.set(key, value);
         });
       }
-      const data = await api(`/transfer/${config.endpoint}${params.toString() ? `?${params}` : ''}`);
+      const data = await api(`/api/transfer/${config.endpoint}${params.toString() ? `?${params}` : ''}`);
       renderPanel(data);
     } catch {
       panel.hidden = true;
@@ -268,12 +268,12 @@ async function loadSlips() {
   const filter = document.getElementById('statusFilter').value.trim();
   const query = new URLSearchParams();
   if (filter) query.set('trangThai', filter);
-  const data = await api(`/transfer/slips${query.toString() ? `?${query}` : ''}`);
+  const data = await api(`/api/transfer/slips${query.toString() ? `?${query}` : ''}`);
   renderSlips(data);
 }
 
 async function loadHistory() {
-  const data = await api('/transfer/reports/history');
+  const data = await api('/api/transfer/reports/history');
   renderHistory(data);
 }
 
@@ -337,7 +337,7 @@ document.getElementById('transferForm').addEventListener('submit', async (event)
       return;
     }
 
-    const created = await api('/transfer/slips', {
+    const created = await api('/api/transfer/slips', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
