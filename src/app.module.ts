@@ -3,9 +3,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database.module'; // Import module kết nối
+import { TransferModule } from './transfer/transfer.module';
 
 @Module({
-  imports: [DatabaseModule], // Thêm vào đây
+  imports: [DatabaseModule, TransferModule],
   controllers: [AppController],
   providers: [AppService],
 })

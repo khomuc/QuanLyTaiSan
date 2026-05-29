@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quản lý tài sản - Điều chuyển</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">CTU</div>
+        <div>
+          <div class="brand-title">Quản lý tài sản</div>
+          <div class="brand-subtitle">Điều chuyển nội bộ</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Điều hướng</div>
+        <button class="nav-item active" data-view="dashboard">Tổng quan</button>
+        <button class="nav-item" data-view="create">Tạo phiếu</button>
+        <button class="nav-item" data-view="manage">Danh sách phiếu</button>
+        <button class="nav-item" data-view="history">Lịch sử điều chuyển</button>
+      </div>
+
+      <div class="nav-footer">
+        <div class="footer-card">
+          <div class="footer-title">Đối tượng sử dụng</div>
+          <div class="footer-text">Ban Giám hiệu, các khoa và phòng ban</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">Hệ thống điều chuyển tài sản</p>
+          <h1>Giao diện chuẩn mực, tối giản cho nghiệp vụ điều chuyển</h1>
+          <p class="hero-desc">Tập trung vào thao tác nhanh, truy xuất rõ ràng và kiểm soát chặt chẽ các bước chọn tài sản, phòng ban và người ký duyệt.</p>
+          <div class="hero-actions">
+            <button class="primary-btn" data-scroll="create">Tạo phiếu điều chuyển</button>
+            <button class="ghost-btn" data-scroll="history">Xem báo cáo lịch sử</button>
+          </div>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="metric-card accent">
+            <span class="metric-label">Phòng ban</span>
+            <strong>6 đơn vị</strong>
+            <small>Ban Giám hiệu, khoa và phòng ban</small>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Luồng duyệt</span>
+            <strong>Tra cứu + ký duyệt</strong>
+            <small>Chọn nhanh theo tên, mã và phòng ban</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="status-strip">
+        <div class="status-card">Chuẩn hóa luồng điều chuyển nội bộ</div>
+        <div class="status-card">Theo dõi lý do, phòng ban đi - đến</div>
+        <div class="status-card">Báo cáo theo thời gian và phòng ban</div>
+      </section>
+
+      <section id="dashboard" class="view-grid">
+        <div class="panel section-card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Quy trình</p>
+              <h2>Thao tác điều chuyển</h2>
+            </div>
+            <span class="pill">Sẵn sàng sử dụng</span>
+          </div>
+          <ol class="step-list">
+            <li>Tìm và chọn tài sản cần điều chuyển.</li>
+            <li>Chọn phòng ban đến và ghi lý do.</li>
+            <li>Chọn người ký duyệt nếu cần.</li>
+            <li>Theo dõi trạng thái và lịch sử xử lý.</li>
+          </ol>
+        </div>
+
+        <div class="panel section-card tinted">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Dữ liệu mẫu</p>
+              <h2>Người ký duyệt</h2>
+            </div>
+          </div>
+          <div class="approver-list">
+            <div>Hiệu trưởng</div>
+            <div>Nguyễn Văn Lĩnh</div>
+            <div>Trần Thanh Sang</div>
+            <div>Bùi Hải Dương</div>
+            <div>Huỳnh Thanh Hiếu</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="create" class="panel form-panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Tạo phiếu</p>
+            <h2>Phiếu điều chuyển mới</h2>
+          </div>
+          <button class="ghost-btn small" id="loadSampleBtn">Nạp mẫu</button>
+        </div>
+
+        <form id="transferForm" class="transfer-form">
+          <div class="form-grid">
+            <label>
+              Người lập
+              <input name="nguoiLap" value="NV0001" required />
+            </label>
+            <label>
+              Phòng ban nguồn (lọc tài sản)
+              <div class="picker" data-picker="sourceDepartment">
+                <input type="hidden" name="maPhongBanNguon" />
+                <input name="maPhongBanNguonSearch" class="picker-input" placeholder="Tìm phòng ban nguồn" autocomplete="off" />
+                <div class="picker-panel" hidden></div>
+              </div>
+            </label>
+            <label>
+              Ngày điều chuyển
+              <input name="ngayDieuChuyen" type="date" />
+            </label>
+            <label class="wide">
+              Ghi chú
+              <input name="ghiChu" placeholder="Ví dụ: Điều chuyển phục vụ phân công công tác" />
+            </label>
+          </div>
+
+          <div class="asset-editor">
+            <div class="subhead">Tài sản điều chuyển</div>
+            <div class="helper-row">
+              <span class="helper-text">Chọn phòng ban nguồn để lọc danh sách tài sản khi điều chuyển nhóm.</span>
+              <button type="button" class="ghost-btn small" id="applyDepartmentToAllBtn">Áp dụng đích cho tất cả</button>
+            </div>
+            <div id="assetRows" class="asset-rows"></div>
+            <button type="button" class="ghost-btn small" id="addAssetBtn">+ Thêm tài sản</button>
+          </div>
+
+          <div class="approver-editor">
+            <div class="subhead">Ký duyệt</div>
+            <div id="approverRows" class="approver-rows"></div>
+            <button type="button" class="ghost-btn small" id="addApproverBtn">+ Thêm người duyệt</button>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Tạo phiếu điều chuyển</button>
+            <div id="createResult" class="result-text"></div>
+          </div>
+        </form>
+      </section>
+
+      <section id="manage" class="panel section-card">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Quản lý</p>
+            <h2>Danh sách phiếu điều chuyển</h2>
+          </div>
+          <div class="filter-row">
+            <input id="statusFilter" placeholder="Trạng thái: CHO_KY / DA_DUYET / TU_CHOI" />
+            <button class="ghost-btn small" id="reloadSlipsBtn">Tải lại</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Số phiếu</th>
+                <th>Ngày</th>
+                <th>Trạng thái</th>
+                <th>Người lập</th>
+                <th>Tài sản</th>
+              </tr>
+            </thead>
+            <tbody id="slipsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="history" class="panel section-card">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Báo cáo</p>
+            <h2>Lịch sử điều chuyển</h2>
+          </div>
+          <button class="ghost-btn small" id="reloadHistoryBtn">Tải lịch sử</button>
+        </div>
+        <div class="history-grid">
+          <div class="history-panel">
+            <h3>Thống kê luồng chuyển</h3>
+            <div id="historySummary" class="summary-list"></div>
+          </div>
+          <div class="history-panel">
+            <h3>Chi tiết giao dịch</h3>
+            <div id="historyItems" class="history-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="assetTemplate">
+    <div class="asset-row">
+      <div class="picker" data-picker="asset">
+        <input type="hidden" name="maTaiSan" />
+        <input name="maTaiSanSearch" class="picker-input" placeholder="Tìm theo mã, QR hoặc tên tài sản" autocomplete="off" />
+        <div class="picker-panel" hidden></div>
+      </div>
+      <div class="picker" data-picker="department">
+        <input type="hidden" name="denPhongBan" />
+        <input name="denPhongBanSearch" class="picker-input" placeholder="Tìm phòng ban đến" autocomplete="off" />
+        <div class="picker-panel" hidden></div>
+      </div>
+      <input name="lyDo" placeholder="Lý do chuyển" />
+      <button type="button" class="duplicate-btn" title="Nhân bản dòng">Nhân bản</button>
+      <button type="button" class="remove-btn">Xóa</button>
+    </div>
+  </template>
+
+  <template id="approverTemplate">
+    <div class="approver-row">
+      <div class="picker" data-picker="employee">
+        <input type="hidden" name="maNhanVien" />
+        <input name="maNhanVienSearch" class="picker-input" placeholder="Tìm mã NV, tên hoặc vai trò" autocomplete="off" />
+        <div class="picker-panel" hidden></div>
+      </div>
+      <input name="tenVaiTro" placeholder="Vai trò ký duyệt" />
+      <input name="vongKy" type="number" min="1" value="1" />
+      <button type="button" class="remove-btn">Xóa</button>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>

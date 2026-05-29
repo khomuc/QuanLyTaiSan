@@ -4,19 +4,30 @@ import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
+  let appService: { getDanhSachTaiSan: jest.Mock };
 
   beforeEach(async () => {
+    appService = {
+      getDanhSachTaiSan: jest.fn().mockResolvedValue([{ MaTaiSan: 'TS0001' }]),
+    };
+
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        {
+          provide: AppService,
+          useValue: appService,
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return asset rows from AppService', async () => {
+      await expect(appController.getHello()).resolves.toEqual([{ MaTaiSan: 'TS0001' }]);
+      expect(appService.getDanhSachTaiSan).toHaveBeenCalledTimes(1);
     });
   });
 });

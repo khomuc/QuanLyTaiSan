@@ -11,17 +11,28 @@ export class AppService {
 
   // Ví dụ lấy danh sách tài sản bằng Raw SQL
   async getDanhSachTaiSan() {
-    // Viết câu lệnh SQL trực tiếp
-    const [rows, fields] = await this.dbConnection.query('SELECT * FROM tai_san');
-    
-    return rows; // Trả về kết quả
+    const [rows] = await this.dbConnection.query(`
+      SELECT ts.MaTaiSan, ts.MaQR, ts.TenTaiSan, ts.Serial, ts.Model, ts.NguyenGia,
+             ts.GiaTriConLai, ts.NgayNhap, ts.TrangThai,
+             pb.TenPhongBan AS TenPhongBanHienTai,
+             lt.TenLoai AS TenLoaiTaiSan
+      FROM TAI_SAN ts
+      LEFT JOIN PHONG_BAN pb ON pb.MaPhongBan = ts.MaPhongBanHienTai
+      LEFT JOIN LOAI_TAI_SAN lt ON lt.MaLoai = ts.MaLoai
+      ORDER BY ts.CreatedAt DESC
+    `);
+
+    return rows;
   }
 
   // Ví dụ thêm tài sản mới
-  async themTaiSan(maQr: string, tenTaiSan: string) {
-    const query = 'INSERT INTO tai_san (maQr, tenTaiSan) VALUES (?, ?)';
-    const [result] = await this.dbConnection.execute(query, [maQr, tenTaiSan]);
-    
+  async themTaiSan(maTaiSan: string, maQr: string, tenTaiSan: string) {
+    const query = `
+      INSERT INTO TAI_SAN (MaTaiSan, MaQR, TenTaiSan, MaLoai, NguyenGia, HaoMonLuyKe, GiaTriConLai, NgayNhap, MaPhongBanHienTai, TrangThai)
+      VALUES (?, ?, ?, 'LT001', 0, 0, 0, CURDATE(), 'PB01', 'HOAT_DONG')
+    `;
+    const [result] = await this.dbConnection.execute(query, [maTaiSan, maQr, tenTaiSan]);
+
     return result;
   }
 }

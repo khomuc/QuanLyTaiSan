@@ -25,6 +25,55 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Transfer Management
+
+Module điều chuyển tài sản nằm ở `src/transfer` và dùng chung database từ `init.sql`.
+
+### Endpoint chính
+
+- `POST /transfer/slips` tạo phiếu điều chuyển
+- `POST /transfer/slips/scan` tạo phiếu từ QR
+- `GET /transfer/slips` danh sách phiếu điều chuyển
+- `GET /transfer/slips/:soPhieu` chi tiết phiếu
+- `PATCH /transfer/slips/:soPhieu` sửa phiếu
+- `DELETE /transfer/slips/:soPhieu` xóa phiếu
+- `POST /transfer/slips/:soPhieu/approval` ký duyệt / từ chối
+- `GET /transfer/reports/history` báo cáo lịch sử điều chuyển
+
+### Dữ liệu mẫu
+
+- Phòng ban, nhân sự ký duyệt, và tài sản mẫu đã được thêm vào `init.sql`.
+- Các mã QR mẫu: `QR-TS-0001` đến `QR-TS-0006`.
+
+### Seed database nhanh (local)
+
+Nếu bạn đang chạy project local và chưa cài dữ liệu mẫu, có hai cách nhanh:
+
+- Chạy file SQL `init.sql` vào MySQL server của bạn (ví dụ bằng MySQL Workbench hoặc `mysql` CLI).
+- Hoặc chạy các script seed đã có trong repo (kết nối tới DB cấu hình trong `src/database.module.ts`):
+
+```powershell
+node scripts/insert_nhan_vien.js
+node scripts/insert_tai_san.js
+```
+
+Script sẽ chèn các bản ghi `NHAN_VIEN` (NV0001..NV0005) và `TAI_SAN` (TS0001..TS0006).
+
+Sau khi seed xong, khởi động dev server và truy cập SPA:
+
+```powershell
+npm run start:dev
+# Mở trình duyệt: http://localhost:3000/
+```
+
+### Chạy thử
+
+```bash
+npm install
+npm run build
+npm run start:dev
+```
+
 ## Project setup
 
 ```bash
