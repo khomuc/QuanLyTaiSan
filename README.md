@@ -11,53 +11,53 @@
 | Minh Khoi | muckho230@gmail.com | Khởi tạo dự án NestJS, kết nối MySQL |
 | **nnhuwz03** | nhu83838@gmail.com | **Toàn bộ frontend React + các module backend** |
 
-## Transfer Management
+## Transfer Management (Module Điều chuyển Tài sản)
 
-Module điều chuyển tài sản nằm ở `src/transfer` và dùng chung database từ `init.sql`.
+Module điều chuyển tài sản đã được tích hợp hoàn chỉnh cả ở **Backend NestJS** (quản lý giao dịch, tuyến phê duyệt) và **Frontend React SPA** (giao diện kéo thả lập phiếu hiện đại).
 
-### Endpoint chính
+### 1. Phân hệ Giao diện React SPA (`/frontend`)
+Giao diện điều chuyển đã được tích hợp thành phân hệ chính thức trên Sidebar của React console (`http://localhost:5173/`), sở hữu giao diện Tab phân chia thông minh:
+* **Lập phiếu điều chuyển (Create)**:
+  * Cho phép chọn người lập và **Phòng ban nguồn**. Khi chọn phòng ban nguồn, danh sách tài sản để chọn sẽ tự động lọc chỉ hiển thị các tài sản thực tế đang nằm tại phòng đó.
+  * Hỗ trợ thêm/xóa/nhân bản nhiều tài sản điều chuyển cùng lúc, nhập lý do riêng và phòng ban nhận riêng biệt cho từng dòng.
+  * Hỗ trợ thiết lập tuyến ký duyệt gồm nhiều người ký, chỉ định vai trò ký và thứ tự vòng ký tương thích với cơ chế phê duyệt của hệ thống.
+  * Tích hợp nút **"Load mẫu"** giúp điền nhanh dữ liệu mô phỏng để kiểm thử.
+* **Lịch sử phiếu (History)**:
+  * Danh sách toàn bộ phiếu điều chuyển đang chờ ký duyệt, đã duyệt, hoặc bị từ chối kèm ngày lập và số tài sản.
+* **Thống kê luân chuyển (Reports)**:
+  * Tổng hợp trực quan luồng di chuyển tài sản tích lũy dạng thẻ lưu lượng: `[PHÒNG BAN NGUỒN] ➜ [PHÒNG BAN ĐÍCH]`.
+  * Nhật ký chi tiết của từng lượt điều chuyển tài sản đã được phê duyệt thành công.
 
-- `POST /transfer/slips` tạo phiếu điều chuyển
-- `POST /transfer/slips/scan` tạo phiếu từ QR
-- `GET /transfer/slips` danh sách phiếu điều chuyển
-- `GET /transfer/slips/:soPhieu` chi tiết phiếu
-- `PATCH /transfer/slips/:soPhieu` sửa phiếu
-- `DELETE /transfer/slips/:soPhieu` xóa phiếu
-- `POST /transfer/slips/:soPhieu/approval` ký duyệt / từ chối
-- `GET /transfer/reports/history` báo cáo lịch sử điều chuyển
+### 2. Phân hệ Giao diện Tĩnh (`/public`)
+* Ngoài React SPA, giao diện tĩnh truyền thống của phân hệ Điều chuyển cũng được phục vụ trực tiếp tại địa chỉ gốc của Backend: **`http://localhost:3000/`**.
+* Đã được cấu hình lại để tự động gọi API NestJS thông qua tiền tố `/api` chuẩn xác.
 
-### Dữ liệu mẫu
+### 3. Backend APIs (`/api/transfer/...`)
+Các endpoints điều chuyển được bảo vệ và cấu hình global prefix `/api`:
+- `POST /api/transfer/slips` — Tạo phiếu điều chuyển mới (kèm tự sinh mã số phiếu dạng `DCYYYYMMDDxxxx` và chạy SQL Transaction).
+- `POST /api/transfer/slips/scan` — Tạo phiếu từ mã QR.
+- `GET /api/transfer/slips` — Danh sách phiếu điều chuyển (hỗ trợ lọc trạng thái, ngày tháng, phòng ban).
+- `GET /api/transfer/slips/:soPhieu` — Chi tiết phiếu điều chuyển kèm chi tiết tài sản và tuyến ký duyệt tương ứng.
+- `PATCH /api/transfer/slips/:soPhieu` — Chỉnh sửa thông tin phiếu (chỉ áp dụng cho phiếu trạng thái `CHO_KY`).
+- `DELETE /api/transfer/slips/:soPhieu` — Xóa phiếu điều chuyển (chỉ áp dụng cho phiếu trạng thái `CHO_KY`).
+- `POST /api/transfer/slips/:soPhieu/approval` — Ký duyệt / Từ chối phiếu (khi toàn bộ tuyến ký duyệt hoàn tất, hệ thống tự động cập nhật lại phòng ban hiện tại của tài sản trong bảng `TAI_SAN`).
+- `GET /api/transfer/reports/history` — Báo cáo thống kê luồng điều chuyển.
 
-- Phòng ban, nhân sự ký duyệt, và tài sản mẫu đã được thêm vào `init.sql`.
-- Các mã QR mẫu: `QR-TS-0001` đến `QR-TS-0006`.
-
-### Seed database nhanh (local)
-
-Nếu bạn đang chạy project local và chưa cài dữ liệu mẫu, có hai cách nhanh:
-
-- Chạy file SQL `init.sql` vào MySQL server của bạn (ví dụ bằng MySQL Workbench hoặc `mysql` CLI).
-- Hoặc chạy các script seed đã có trong repo (kết nối tới DB cấu hình trong `src/database.module.ts`):
-
+### 4. Dữ liệu mẫu & Scripts Seed nhanh
+- Cơ sở dữ liệu mẫu đã có sẵn trong file `init.sql`.
+- Hoặc bạn có thể chạy các script seed dữ liệu độc lập:
 ```powershell
+# Chạy từ thư mục QuanLyTaiSan
 node scripts/insert_nhan_vien.js
 node scripts/insert_tai_san.js
 ```
+- Các mã QR tài sản mẫu: `QR-TS-0001` đến `QR-TS-0006`.
 
-Script sẽ chèn các bản ghi `NHAN_VIEN` (NV0001..NV0005) và `TAI_SAN` (TS0001..TS0006).
-
-Sau khi seed xong, khởi động dev server và truy cập SPA:
-
-```powershell
-npm run start:dev
-# Mở trình duyệt: http://localhost:3000/
-```
-
-### Chạy thử
-
+### 5. Lệnh chạy kiểm thử dự án
 ```bash
-npm install
-npm run build
-npm run start:dev
+npm run build         # Biên dịch Backend NestJS
+npm run test          # Chạy toàn bộ Unit tests (bao gồm TransferService spec)
+npm run test:e2e      # Chạy kiểm thử End-to-End
 ```
 
 ## Project setup
