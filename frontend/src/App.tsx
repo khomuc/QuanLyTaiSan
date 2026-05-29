@@ -27,6 +27,7 @@ import {
   User,
   Users,
   X,
+  ArrowRightLeft,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
@@ -60,6 +61,7 @@ const navItems: NavItem[] = [
   { key: 'dashboard', label: 'Tong quan', icon: LayoutDashboard },
   { key: 'assets', label: 'Tai san', icon: PackageSearch },
   { key: 'employees', label: 'Nhan vien', icon: Users },
+  { key: 'transfer', label: 'Dieu chuyen', icon: ArrowRightLeft },
   { key: 'roles', label: 'Vai tro & quyen', icon: ShieldCheck },
   { key: 'approvals', label: 'Ky duyet', icon: ClipboardCheck },
   { key: 'notifications', label: 'Thong bao', icon: Bell },
@@ -117,6 +119,8 @@ function App() {
   );
   const [settings, setSettings] = useState<SystemSettings>(demo.settings);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(demo.auditLogs.data);
+  const [transferSlips, setTransferSlips] = useState<any[]>([]);
+  const [transferHistory, setTransferHistory] = useState<any>({ summary: [], items: [] });
 
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [assetSearch, setAssetSearch] = useState('');
@@ -265,6 +269,21 @@ function App() {
         setUser(await api.me());
       }
 
+      if (nextView === 'transfer') {
+        const [deptList, empList, slipsList, historyData, assetList] = await Promise.all([
+          api.departments(),
+          api.employees(),
+          api.listTransferSlips(),
+          api.historyReport(),
+          api.assets(),
+        ]);
+        setDepartments(deptList);
+        setEmployees(empList.data);
+        setTransferSlips(slipsList);
+        setTransferHistory(historyData);
+        setAssets(assetList.data);
+      }
+
       setApiMode('api');
     } catch {
       loadDemoView(nextView);
@@ -276,6 +295,12 @@ function App() {
 
   function loadDemoView(nextView: ViewKey) {
     if (nextView === 'dashboard') setDashboard(demo.dashboard);
+    if (nextView === 'transfer') {
+      setDepartments(demo.departments);
+      setEmployees(demo.employees);
+      setTransferSlips([]);
+      setTransferHistory({ summary: [], items: [] });
+    }
     if (nextView === 'assets') {
       setAssets(demo.assets);
       setAssetCategories(demo.assetCategories);
@@ -618,6 +643,17 @@ function App() {
               onEdit={openEditEmployee}
               onDelete={(maNhanVien) => void deactivateEmployee(maNhanVien)}
               onRefresh={() => void loadView('employees')}
+            />
+          )}
+          {view === 'transfer' && (
+            <TransferPage
+              departments={departments}
+              employees={employees}
+              assets={assets}
+              slips={transferSlips}
+              history={transferHistory}
+              onRefresh={() => void loadView('transfer')}
+              setToast={setToast}
             />
           )}
           {view === 'roles' && (
@@ -1665,6 +1701,467 @@ function formatCurrencyShort(value: number) {
     return `${Math.round(value / 1_000_000)} tr`;
   }
   return formatCurrency(value);
+}
+
+interface TransferPageProps {
+  departments: Department[];
+  employees: Employee[];
+  assets: Asset[];
+  slips: any[];
+  history: any;
+  onRefresh: () => void;
+  setToast: (msg: string) => void;
+}
+
+function TransferPage({
+  departments,
+  employees,
+  assets,
+  slips,
+  history,
+  onRefresh,
+  setToast,
+}: TransferPageProps) {
+  const [nguoiLap, setNguoiLap] = useState('NV0001');
+  const [ghiChu, setGhiChu] = useState('');
+  const [sourceDept, setSourceDept] = useState('');
+  const [assetRows, setAssetRows] = useState<Array<{ maTaiSan: string; denPhongBan: string; lyDo: string }>>([
+    { maTaiSan: '', denPhongBan: '', lyDo: '' }
+  ]);
+  const [approverRows, setApproverRows] = useState<Array<{ maNhanVien: string; tenVaiTro: string; vongKy: number }>>([
+    { maNhanVien: '', tenVaiTro: '', vongKy: 1 }
+  ]);
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const filteredSourceAssets = useMemo(() => {
+    if (!sourceDept) return assets;
+    return assets.filter(a => a.maPhongBanHienTai === sourceDept);
+  }, [assets, sourceDept]);
+
+  const loadSample = () => {
+    setGhiChu('Dieu chuyen phuc vu cong tac chuyen mon');
+    setSourceDept('PB01');
+    setAssetRows([
+      { maTaiSan: 'TS0001', denPhongBan: 'PB02', lyDo: 'Dieu phoi cong tac' },
+      { maTaiSan: 'TS0002', denPhongBan: 'PB03', lyDo: 'Sap xep lai phong ban' }
+    ]);
+    setApproverRows([
+      { maNhanVien: 'NV0001', tenVaiTro: 'Hieu truong', vongKy: 1 }
+    ]);
+  };
+
+  const addAssetRow = () => {
+    setAssetRows([...assetRows, { maTaiSan: '', denPhongBan: '', lyDo: '' }]);
+  };
+
+  const removeAssetRow = (index: number) => {
+    setAssetRows(assetRows.filter((_, idx) => idx !== index));
+  };
+
+  const duplicateAssetRow = (index: number) => {
+    const row = assetRows[index];
+    setAssetRows([...assetRows, { ...row }]);
+  };
+
+  const updateAssetRow = (index: number, field: string, value: any) => {
+    setAssetRows(assetRows.map((row, idx) => idx === index ? { ...row, [field]: value } : row));
+  };
+
+  const addApproverRow = () => {
+    setApproverRows([...approverRows, { maNhanVien: '', tenVaiTro: '', vongKy: approverRows.length + 1 }]);
+  };
+
+  const removeApproverRow = (index: number) => {
+    setApproverRows(approverRows.filter((_, idx) => idx !== index));
+  };
+
+  const updateApproverRow = (index: number, field: string, value: any) => {
+    setApproverRows(approverRows.map((row, idx) => idx === index ? { ...row, [field]: value } : row));
+  };
+
+  const applyDepartmentToAll = () => {
+    const firstDest = assetRows[0]?.denPhongBan;
+    if (!firstDest) {
+      setToast('Chua chon phong ban den o dong dau tien');
+      return;
+    }
+    setAssetRows(assetRows.map(row => ({ ...row, denPhongBan: firstDest })));
+    setToast('Da ap dung phong ban cho tat ca');
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nguoiLap.trim()) {
+      setToast('Nguoi lap khong duoc de trong');
+      return;
+    }
+    const cleanAssets = assetRows.filter(r => r.maTaiSan && r.denPhongBan);
+    if (cleanAssets.length === 0) {
+      setToast('Can chon it nhat 1 tai san va phong ban den');
+      return;
+    }
+    const cleanApprovers = approverRows.filter(r => r.maNhanVien);
+
+    try {
+      const payload = {
+        nguoiLap: nguoiLap.trim(),
+        ghiChu: ghiChu.trim() || undefined,
+        danhSachTaiSan: cleanAssets.map(a => ({
+          maTaiSan: a.maTaiSan,
+          denPhongBan: a.denPhongBan,
+          lyDo: a.lyDo.trim() || undefined
+        })),
+        danhSachKyDuyet: cleanApprovers.length ? cleanApprovers : undefined,
+      };
+
+      const result = await api.createTransferSlip(payload);
+      setToast(`Da tao phieu ${result.SoPhieu} thanh cong!`);
+      setGhiChu('');
+      setAssetRows([{ maTaiSan: '', denPhongBan: '', lyDo: '' }]);
+      setApproverRows([{ maNhanVien: '', tenVaiTro: '', vongKy: 1 }]);
+      onRefresh();
+    } catch (err: any) {
+      setToast(`Loi: ${err.message || 'Khong the tao phieu'}`);
+    }
+  };
+
+  const filteredSlips = useMemo(() => {
+    if (!statusFilter) return slips;
+    return slips.filter(s => s.TrangThaiDuyet === statusFilter);
+  }, [slips, statusFilter]);
+
+  return (
+    <div className="two-column">
+      <section className="panel span-2">
+        <div className="panel-header">
+          <h2>Tao phieu dieu chuyen moi</h2>
+          <div className="panel-actions">
+            <button className="secondary-button" onClick={loadSample} type="button">
+              Load du lieu mau
+            </button>
+            <button className="primary-button" onClick={submit} type="button">
+              <Save size={18} />
+              Tao phieu
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={submit} className="stack-form">
+          <div className="settings-grid">
+            <label>
+              Nguoi lap (Ma Nhan vien)
+              <select value={nguoiLap} onChange={e => setNguoiLap(e.target.value)}>
+                {employees.map(emp => (
+                  <option key={emp.maNhanVien} value={emp.maNhanVien}>
+                    {emp.maNhanVien} - {emp.hoTen}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Phong ban nguon
+              <select value={sourceDept} onChange={e => {
+                setSourceDept(e.target.value);
+                setAssetRows([{ maTaiSan: '', denPhongBan: '', lyDo: '' }]);
+              }}>
+                <option value="">-- Chon tat ca phong ban --</option>
+                {departments.map(d => (
+                  <option key={d.maPhongBan} value={d.maPhongBan}>
+                    {d.maPhongBan} - {d.tenPhongBan}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="span-2">
+              Ghi chu phieu
+              <input
+                value={ghiChu}
+                onChange={e => setGhiChu(e.target.value)}
+                placeholder="Nhap ghi chu cho phieu dieu chuyen..."
+              />
+            </label>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <div className="panel-header" style={{ padding: '10px 0' }}>
+              <h3>Danh sach tai san dieu chuyen</h3>
+              <div className="panel-actions">
+                <button className="secondary-button" onClick={applyDepartmentToAll} type="button">
+                  Ap dung PB den cho tat ca
+                </button>
+                <button className="secondary-button" onClick={addAssetRow} type="button">
+                  <Plus size={16} /> Them tai san
+                </button>
+              </div>
+            </div>
+
+            <div className="stack-list">
+              {assetRows.map((row, index) => (
+                <div className="asset-row-editor" key={index} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 2fr 3fr auto',
+                  gap: '10px',
+                  alignItems: 'center',
+                  marginBottom: '10px',
+                  background: 'rgba(255,255,255,0.05)',
+                  padding: '10px',
+                  borderRadius: '6px'
+                }}>
+                  <label style={{ margin: 0 }}>
+                    Tai san
+                    <select
+                      value={row.maTaiSan}
+                      onChange={e => updateAssetRow(index, 'maTaiSan', e.target.value)}
+                    >
+                      <option value="">-- Chon tai san --</option>
+                      {filteredSourceAssets.map(a => (
+                        <option key={a.maTaiSan} value={a.maTaiSan}>
+                          {a.tenTaiSan} ({a.maQR || a.maTaiSan})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ margin: 0 }}>
+                    Phong ban den
+                    <select
+                      value={row.denPhongBan}
+                      onChange={e => updateAssetRow(index, 'denPhongBan', e.target.value)}
+                    >
+                      <option value="">-- Chon phong ban --</option>
+                      {departments.map(d => (
+                        <option key={d.maPhongBan} value={d.maPhongBan}>
+                          {d.maPhongBan} - {d.tenPhongBan}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ margin: 0 }}>
+                    Ly do dieu chuyen
+                    <input
+                      value={row.lyDo}
+                      onChange={e => updateAssetRow(index, 'lyDo', e.target.value)}
+                      placeholder="Ly do..."
+                    />
+                  </label>
+
+                  <div style={{ display: 'flex', gap: '5px', marginTop: '16px' }}>
+                    <button
+                      className="icon-button"
+                      onClick={() => duplicateAssetRow(index)}
+                      type="button"
+                      title="Nhan ban"
+                    >
+                      <Plus size={16} />
+                    </button>
+                    {assetRows.length > 1 && (
+                      <button
+                        className="icon-button danger"
+                        onClick={() => removeAssetRow(index)}
+                        type="button"
+                        title="Xoa"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <div className="panel-header" style={{ padding: '10px 0' }}>
+              <h3>Tuyen duyet (Danh sach ky duyet)</h3>
+              <button className="secondary-button" onClick={addApproverRow} type="button">
+                <Plus size={16} /> Them nguoi ky
+              </button>
+            </div>
+
+            <div className="stack-list">
+              {approverRows.map((row, index) => (
+                <div className="approver-row-editor" key={index} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 2fr 1fr auto',
+                  gap: '10px',
+                  alignItems: 'center',
+                  marginBottom: '10px',
+                  background: 'rgba(255,255,255,0.05)',
+                  padding: '10px',
+                  borderRadius: '6px'
+                }}>
+                  <label style={{ margin: 0 }}>
+                    Nhan vien ky duyet
+                    <select
+                      value={row.maNhanVien}
+                      onChange={e => {
+                        const emp = employees.find(emp => emp.maNhanVien === e.target.value);
+                        updateApproverRow(index, 'maNhanVien', e.target.value);
+                        if (emp) {
+                          updateApproverRow(index, 'tenVaiTro', emp.tenVaiTro || emp.chucVu || '');
+                        }
+                      }}
+                    >
+                      <option value="">-- Chon nhan vien --</option>
+                      {employees.map(emp => (
+                        <option key={emp.maNhanVien} value={emp.maNhanVien}>
+                          {emp.maNhanVien} - {emp.hoTen}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ margin: 0 }}>
+                    Ten vai tro ky
+                    <input
+                      value={row.tenVaiTro}
+                      onChange={e => updateApproverRow(index, 'tenVaiTro', e.target.value)}
+                      placeholder="Chuc vu ky..."
+                    />
+                  </label>
+
+                  <label style={{ margin: 0 }}>
+                    Vong ky
+                    <input
+                      type="number"
+                      value={row.vongKy}
+                      onChange={e => updateApproverRow(index, 'vongKy', Number(e.target.value))}
+                      min="1"
+                    />
+                  </label>
+
+                  <div style={{ marginTop: '16px' }}>
+                    {approverRows.length > 1 && (
+                      <button
+                        className="icon-button danger"
+                        onClick={() => removeApproverRow(index)}
+                        type="button"
+                        title="Xoa"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section className="panel span-2">
+        <div className="panel-header">
+          <h2>Lich su phieu dieu chuyen</h2>
+          <div className="panel-actions">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="">Tat ca trang thai</option>
+              <option value="CHO_KY">CHO_KY</option>
+              <option value="DA_DUYET">DA_DUYET</option>
+              <option value="TU_CHOI">TU_CHOI</option>
+            </select>
+            <button className="icon-button" onClick={onRefresh} title="Tai lai">
+              <RefreshCw size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>So Phieu</th>
+                <th>Ngay Dieu Chuyen</th>
+                <th>Trang Thai</th>
+                <th>Nguoi Lap</th>
+                <th>So Tai San</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSlips.map(slip => (
+                <tr key={slip.SoPhieu}>
+                  <td><strong>{slip.SoPhieu}</strong></td>
+                  <td>{slip.NgayDieuChuyen ? String(slip.NgayDieuChuyen).slice(0, 10) : ''}</td>
+                  <td><StatusPill value={slip.TrangThaiDuyet} /></td>
+                  <td>{slip.NguoiLapTen || slip.NguoiLap}</td>
+                  <td>{slip.TongTaiSan || 0}</td>
+                </tr>
+              ))}
+              {!filteredSlips.length && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center' }}>
+                    Khong co phieu dieu chuyen nao
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel span-2">
+        <div className="panel-header">
+          <h2>Bao cao lich su & Thong ke dieu chuyen</h2>
+        </div>
+        <div className="panel-header" style={{ padding: '5px 0' }}>
+          <h3>Tong quan luong tai san</h3>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gap: '15px',
+          marginBottom: '20px'
+        }}>
+          {(history.summary || []).map((item: any, idx: number) => (
+            <div key={idx} style={{
+              background: 'rgba(255,255,255,0.05)',
+              padding: '15px',
+              borderRadius: '8px',
+              borderLeft: '4px solid var(--accent-amber, #f59e0b)'
+            }}>
+              <div style={{ fontSize: '12px', opacity: 0.7 }}>Tu phong</div>
+              <strong style={{ display: 'block', fontSize: '14px' }}>{item.TuPhongBanTen || item.TuPhongBan}</strong>
+              <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '5px' }}>Den phong</div>
+              <strong style={{ display: 'block', fontSize: '14px' }}>{item.DenPhongBanTen || item.DenPhongBan}</strong>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '10px', color: 'var(--accent-amber, #f59e0b)' }}>
+                {item.SoLuongTaiSan} tai san
+              </div>
+            </div>
+          ))}
+          {!(history.summary || []).length && (
+            <EmptyState text="Chua co thong ke dieu chuyen" />
+          )}
+        </div>
+
+        <div className="panel-header" style={{ padding: '5px 0' }}>
+          <h3>Chi tiet dieu chuyen da duyet</h3>
+        </div>
+        <div className="compact-list">
+          {(history.items || []).map((item: any, idx: number) => (
+            <div className="compact-item" key={idx}>
+              <div>
+                <strong>{item.SoPhieu} - {item.TenTaiSan}</strong>
+                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>
+                  {item.TuPhongBanTen || item.TuPhongBan} → {item.DenPhongBanTen || item.DenPhongBan}
+                </div>
+                <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>
+                  Ly do: {item.LyDo || 'Khong co ghi chu ly do'}
+                </div>
+              </div>
+              <div style={{ fontSize: '12px', opacity: 0.8 }}>
+                Nguoi lap: {item.NguoiLapTen || item.NguoiLap}
+              </div>
+            </div>
+          ))}
+          {!(history.items || []).length && (
+            <EmptyState text="Chua co thong tin lich su dieu chuyen" />
+          )}
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export default App;

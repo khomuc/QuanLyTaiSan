@@ -7,7 +7,8 @@ export type ViewKey =
   | 'notifications'
   | 'settings'
   | 'audit'
-  | 'profile';
+  | 'profile'
+  | 'transfer';
 
 export interface AuthUser {
   maNhanVien: string;

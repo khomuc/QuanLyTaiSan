@@ -203,4 +203,22 @@ export const api = {
     const query = search ? `?search=${encodeURIComponent(search)}` : '';
     return request<AuditLogList>(`/audit-logs${query}`);
   },
+
+  listTransferSlips(filters: { trangThai?: string } = {}) {
+    const params = new URLSearchParams();
+    if (filters.trangThai) params.set('trangThai', filters.trangThai);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return request<any[]>(`/transfer/slips${query}`);
+  },
+
+  createTransferSlip(payload: any) {
+    return request<any>('/transfer/slips', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  historyReport() {
+    return request<any>('/transfer/reports/history');
+  },
 };
