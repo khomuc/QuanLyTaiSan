@@ -15,7 +15,11 @@ describe('AppController (e2e)', () => {
         {
           provide: AppService,
           useValue: {
-            getDanhSachTaiSan: jest.fn().mockResolvedValue([{ MaTaiSan: 'TS0001' }]),
+            getHealth: jest.fn().mockReturnValue({
+              status: 'ok',
+              service: 'quan-ly-tai-san-api',
+              timestamp: '2026-05-17T00:00:00.000Z',
+            }),
           },
         },
       ],
@@ -29,7 +33,11 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect([{ MaTaiSan: 'TS0001' }]);
+      .expect({
+        status: 'ok',
+        service: 'quan-ly-tai-san-api',
+        timestamp: '2026-05-17T00:00:00.000Z',
+      });
   });
 
   afterEach(async () => {
