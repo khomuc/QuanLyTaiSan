@@ -11,55 +11,6 @@
 | Minh Khoi | muckho230@gmail.com | Khởi tạo dự án NestJS, kết nối MySQL |
 | **nnhuwz03** | nhu83838@gmail.com | **Toàn bộ frontend React + các module backend** |
 
-## Transfer Management (Module Điều chuyển Tài sản)
-
-Module điều chuyển tài sản đã được tích hợp hoàn chỉnh cả ở **Backend NestJS** (quản lý giao dịch, tuyến phê duyệt) và **Frontend React SPA** (giao diện kéo thả lập phiếu hiện đại).
-
-### 1. Phân hệ Giao diện React SPA (`/frontend`)
-Giao diện điều chuyển đã được tích hợp thành phân hệ chính thức trên Sidebar của React console (`http://localhost:5173/`), sở hữu giao diện Tab phân chia thông minh:
-* **Lập phiếu điều chuyển (Create)**:
-  * Cho phép chọn người lập và **Phòng ban nguồn**. Khi chọn phòng ban nguồn, danh sách tài sản để chọn sẽ tự động lọc chỉ hiển thị các tài sản thực tế đang nằm tại phòng đó.
-  * Hỗ trợ thêm/xóa/nhân bản nhiều tài sản điều chuyển cùng lúc, nhập lý do riêng và phòng ban nhận riêng biệt cho từng dòng.
-  * Hỗ trợ thiết lập tuyến ký duyệt gồm nhiều người ký, chỉ định vai trò ký và thứ tự vòng ký tương thích với cơ chế phê duyệt của hệ thống.
-  * Tích hợp nút **"Load mẫu"** giúp điền nhanh dữ liệu mô phỏng để kiểm thử.
-* **Lịch sử phiếu (History)**:
-  * Danh sách toàn bộ phiếu điều chuyển đang chờ ký duyệt, đã duyệt, hoặc bị từ chối kèm ngày lập và số tài sản.
-* **Thống kê luân chuyển (Reports)**:
-  * Tổng hợp trực quan luồng di chuyển tài sản tích lũy dạng thẻ lưu lượng: `[PHÒNG BAN NGUỒN] ➜ [PHÒNG BAN ĐÍCH]`.
-  * Nhật ký chi tiết của từng lượt điều chuyển tài sản đã được phê duyệt thành công.
-
-### 2. Phân hệ Giao diện Tĩnh (`/public`)
-* Ngoài React SPA, giao diện tĩnh truyền thống của phân hệ Điều chuyển cũng được phục vụ trực tiếp tại địa chỉ gốc của Backend: **`http://localhost:3000/`**.
-* Đã được cấu hình lại để tự động gọi API NestJS thông qua tiền tố `/api` chuẩn xác.
-
-### 3. Backend APIs (`/api/transfer/...`)
-Các endpoints điều chuyển được bảo vệ và cấu hình global prefix `/api`:
-- `POST /api/transfer/slips` — Tạo phiếu điều chuyển mới (kèm tự sinh mã số phiếu dạng `DCYYYYMMDDxxxx` và chạy SQL Transaction).
-- `POST /api/transfer/slips/scan` — Tạo phiếu từ mã QR.
-- `GET /api/transfer/slips` — Danh sách phiếu điều chuyển (hỗ trợ lọc trạng thái, ngày tháng, phòng ban).
-- `GET /api/transfer/slips/:soPhieu` — Chi tiết phiếu điều chuyển kèm chi tiết tài sản và tuyến ký duyệt tương ứng.
-- `PATCH /api/transfer/slips/:soPhieu` — Chỉnh sửa thông tin phiếu (chỉ áp dụng cho phiếu trạng thái `CHO_KY`).
-- `DELETE /api/transfer/slips/:soPhieu` — Xóa phiếu điều chuyển (chỉ áp dụng cho phiếu trạng thái `CHO_KY`).
-- `POST /api/transfer/slips/:soPhieu/approval` — Ký duyệt / Từ chối phiếu (khi toàn bộ tuyến ký duyệt hoàn tất, hệ thống tự động cập nhật lại phòng ban hiện tại của tài sản trong bảng `TAI_SAN`).
-- `GET /api/transfer/reports/history` — Báo cáo thống kê luồng điều chuyển.
-
-### 4. Dữ liệu mẫu & Scripts Seed nhanh
-- Cơ sở dữ liệu mẫu đã có sẵn trong file `init.sql`.
-- Hoặc bạn có thể chạy các script seed dữ liệu độc lập:
-```powershell
-# Chạy từ thư mục QuanLyTaiSan
-node scripts/insert_nhan_vien.js
-node scripts/insert_tai_san.js
-```
-- Các mã QR tài sản mẫu: `QR-TS-0001` đến `QR-TS-0006`.
-
-### 5. Lệnh chạy kiểm thử dự án
-```bash
-npm run build         # Biên dịch Backend NestJS
-npm run test          # Chạy toàn bộ Unit tests (bao gồm TransferService spec)
-npm run test:e2e      # Chạy kiểm thử End-to-End
-```
-
 ## Project setup
 ---
 
@@ -382,6 +333,52 @@ src/
 
 **Lọc theo:** `search`, `maNhanVien`, `hanhDong`, `doiTuong`, `trangThai`, `fromDate`, `toDate`
 
+###  Module Điều chuyển Tài sản (Transfer Management)
+
+Module điều chuyển tài sản đã được tích hợp hoàn chỉnh cả ở **Backend NestJS** (quản lý giao dịch, tuyến phê duyệt) và **Frontend React SPA** (giao diện kéo thả lập phiếu hiện đại).
+
+### 1. Phân hệ Giao diện React SPA (`/frontend`)
+Giao diện điều chuyển đã được tích hợp thành phân hệ chính thức trên Sidebar của React console (`http://localhost:5173/`):
+* **Lập phiếu điều chuyển (Create)**:
+  * Cho phép chọn người lập và **Phòng ban nguồn**. Khi chọn phòng ban nguồn, danh sách tài sản để chọn sẽ tự động lọc chỉ hiển thị các tài sản thực tế đang nằm tại phòng đó.
+  * Hỗ trợ thêm/xóa/nhân bản nhiều tài sản điều chuyển cùng lúc, nhập lý do riêng và phòng ban nhận riêng biệt cho từng dòng.
+  * Hỗ trợ thiết lập tuyến ký duyệt gồm nhiều người ký, chỉ định vai trò ký và thứ tự vòng ký tương thích với cơ chế phê duyệt của hệ thống.
+  * Tích hợp nút **"Load mẫu"** giúp điền nhanh dữ liệu mô phỏng để kiểm thử.
+* **Lịch sử phiếu (History)**:
+  * Danh sách toàn bộ phiếu điều chuyển đang chờ ký duyệt, đã duyệt, hoặc bị từ chối kèm ngày lập và số tài sản.
+* **Thống kê luân chuyển (Reports)**:
+  * Tổng hợp trực quan luồng di chuyển tài sản tích lũy dạng thẻ lưu lượng: `[PHÒNG BAN NGUỒN] ➜ [PHÒNG BAN ĐÍCH]`.
+  * Nhật ký chi tiết của từng lượt điều chuyển tài sản đã được phê duyệt thành công.
+
+### 2. Phân hệ Giao diện Tĩnh (`/public`)
+* Ngoài React SPA, giao diện tĩnh truyền thống của phân hệ Điều chuyển cũng được phục vụ trực tiếp tại địa chỉ gốc của Backend: **`http://localhost:3000/`**.
+* Đã được cấu hình lại để tự động gọi API NestJS thông qua `/api`.
+
+### 3. Backend APIs (`/api/transfer/...`)
+Các endpoints điều chuyển cấu hình global prefix `/api`:
+- `POST /api/transfer/slips` — Tạo phiếu điều chuyển mới (kèm tự sinh mã số phiếu dạng `DCYYYYMMDDxxxx` và chạy SQL Transaction).
+- `POST /api/transfer/slips/scan` — Tạo phiếu từ mã QR.
+- `GET /api/transfer/slips` — Danh sách phiếu điều chuyển (hỗ trợ lọc trạng thái, ngày tháng, phòng ban).
+- `GET /api/transfer/slips/:soPhieu` — Chi tiết phiếu điều chuyển kèm chi tiết tài sản và tuyến ký duyệt tương ứng.
+- `PATCH /api/transfer/slips/:soPhieu` — Chỉnh sửa thông tin phiếu (chỉ áp dụng cho phiếu trạng thái `CHO_KY`).
+- `DELETE /api/transfer/slips/:soPhieu` — Xóa phiếu điều chuyển (chỉ áp dụng cho phiếu trạng thái `CHO_KY`).
+- `POST /api/transfer/slips/:soPhieu/approval` — Ký duyệt / Từ chối phiếu (khi toàn bộ tuyến ký duyệt hoàn tất, hệ thống tự động cập nhật lại phòng ban hiện tại của tài sản trong bảng `TAI_SAN`).
+- `GET /api/transfer/reports/history` — Báo cáo thống kê luồng điều chuyển.
+
+### 4. Dữ liệu mẫu & Scripts Seed nhanh
+- Cơ sở dữ liệu mẫu đã có sẵn trong file `init.sql`.
+# Chạy từ thư mục QuanLyTaiSan
+node scripts/insert_nhan_vien.js
+node scripts/insert_tai_san.js
+```
+- Các mã QR tài sản mẫu: `QR-TS-0001` đến `QR-TS-0006`.
+
+### 5. Lệnh chạy kiểm thử dự án
+```bash
+npm run build         # Biên dịch Backend NestJS
+npm run test          # Chạy toàn bộ Unit tests (bao gồm TransferService spec)
+npm run test:e2e      # Chạy kiểm thử End-to-End
+```
 ### Bảo mật — Guards & Decorators
 
 **`JwtAuthGuard`** (`src/common/guards/jwt-auth.guard.ts`):
@@ -397,6 +394,7 @@ src/
 **`@CurrentUser()`** — custom decorator lấy `request.user` trong controller
 
 ---
+
 
 ## III. Hướng dẫn Cài đặt & Chạy dự án
 
