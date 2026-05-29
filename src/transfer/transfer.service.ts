@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { Connection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
+import type { Pool, PoolConnection } from 'mysql2/promise';
+import { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { ApprovalTransferDto } from './dto/approval-transfer.dto';
 import { CreateTransferSlipDto } from './dto/create-transfer-slip.dto';
 import { UpdateTransferSlipDto } from './dto/update-transfer-slip.dto';
@@ -74,7 +75,7 @@ interface ApprovalRow extends RowDataPacket {
 export class TransferService {
   constructor(
     @Inject('MYSQL_CONNECTION')
-    private readonly dbConnection: Connection,
+    private readonly dbConnection: Pool,
   ) {}
 
   async createSlip(dto: CreateTransferSlipDto) {
@@ -89,24 +90,25 @@ export class TransferService {
     const soPhieu = await this.generateSlipNumber();
     const ngayDieuChuyen = dto.ngayDieuChuyen ?? new Date().toISOString().slice(0, 10);
 
-    await this.dbConnection.beginTransaction();
+    const connection = await this.dbConnection.getConnection();
+    await connection.beginTransaction();
 
     try {
-      await this.dbConnection.execute(
+      await connection.execute(
         `INSERT INTO PHIEU_DIEU_CHUYEN (SoPhieu, NgayDieuChuyen, TrangThaiDuyet, GhiChu, NguoiLap)
          VALUES (?, ?, 'CHO_KY', ?, ?)`,
         [soPhieu, ngayDieuChuyen, dto.ghiChu ?? null, dto.nguoiLap],
       );
 
       for (const item of dto.danhSachTaiSan) {
-        const asset = await this.resolveAsset(item.maTaiSan, item.maQR);
+        const asset = await this.resolveAsset(item.maTaiSan, item.maQR, connection);
         const destination = item.denPhongBan?.trim();
 
         if (!destination) {
           throw new BadRequestException('Phong ban den khong duoc de trong');
         }
 
-        const [departmentRows] = await this.dbConnection.query<RowDataPacket[]>(
+        const [departmentRows] = await connection.query<RowDataPacket[]>(
           'SELECT MaPhongBan FROM PHONG_BAN WHERE MaPhongBan = ? LIMIT 1',
           [destination],
         );
@@ -119,7 +121,7 @@ export class TransferService {
           throw new BadRequestException(`Tai san ${asset.MaTaiSan} da nam tai phong ban nay`);
         }
 
-        await this.dbConnection.execute(
+        await connection.execute(
           `INSERT INTO CHI_TIET_PHIEU_DIEU_CHUYEN (SoPhieu, MaTaiSan, TuPhongBan, DenPhongBan, LyDo)
            VALUES (?, ?, ?, ?, ?)`,
           [soPhieu, asset.MaTaiSan, asset.MaPhongBanHienTai, destination, item.lyDo ?? dto.ghiChu ?? null],
@@ -128,7 +130,7 @@ export class TransferService {
 
       if (Array.isArray(dto.danhSachKyDuyet) && dto.danhSachKyDuyet.length > 0) {
         for (const approver of dto.danhSachKyDuyet) {
-          const [employeeRows] = await this.dbConnection.query<RowDataPacket[]>(
+          const [employeeRows] = await connection.query<RowDataPacket[]>(
             'SELECT MaNhanVien FROM NHAN_VIEN WHERE MaNhanVien = ? LIMIT 1',
             [approver.maNhanVien],
           );
@@ -137,7 +139,7 @@ export class TransferService {
             throw new BadRequestException(`Khong tim thay nhan vien ky duyet: ${approver.maNhanVien}`);
           }
 
-          await this.dbConnection.execute(
+          await connection.execute(
             `INSERT INTO PHIEU_DIEU_CHUYEN_NHAN_VIEN (SoPhieu, MaNhanVien, VongKy, TenVaiTro, TrangThaiKy)
              VALUES (?, ?, ?, ?, 'CHO_KY')`,
             [
@@ -150,11 +152,13 @@ export class TransferService {
         }
       }
 
-      await this.dbConnection.commit();
+      await connection.commit();
       return this.getSlipDetail(soPhieu);
     } catch (error) {
-      await this.dbConnection.rollback();
+      await connection.rollback();
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -312,12 +316,13 @@ export class TransferService {
       throw new BadRequestException('Chi co the sua phieu dang cho ky');
     }
 
-    await this.dbConnection.beginTransaction();
+    const connection = await this.dbConnection.getConnection();
+    await connection.beginTransaction();
 
     try {
       const ngayDieuChuyen = dto.ngayDieuChuyen ?? slip.NgayDieuChuyen;
 
-      await this.dbConnection.execute(
+      await connection.execute(
         `UPDATE PHIEU_DIEU_CHUYEN
          SET NgayDieuChuyen = ?, GhiChu = ?
          WHERE SoPhieu = ?`,
@@ -325,17 +330,17 @@ export class TransferService {
       );
 
       if (Array.isArray(dto.danhSachTaiSan)) {
-        await this.dbConnection.execute('DELETE FROM CHI_TIET_PHIEU_DIEU_CHUYEN WHERE SoPhieu = ?', [soPhieu]);
+        await connection.execute('DELETE FROM CHI_TIET_PHIEU_DIEU_CHUYEN WHERE SoPhieu = ?', [soPhieu]);
 
         for (const item of dto.danhSachTaiSan) {
-          const asset = await this.resolveAsset(item.maTaiSan, item.maQR);
+          const asset = await this.resolveAsset(item.maTaiSan, item.maQR, connection);
           const destination = item.denPhongBan?.trim();
 
           if (!destination) {
             throw new BadRequestException('Phong ban den khong duoc de trong');
           }
 
-          await this.dbConnection.execute(
+          await connection.execute(
             `INSERT INTO CHI_TIET_PHIEU_DIEU_CHUYEN (SoPhieu, MaTaiSan, TuPhongBan, DenPhongBan, LyDo)
              VALUES (?, ?, ?, ?, ?)`,
             [soPhieu, asset.MaTaiSan, asset.MaPhongBanHienTai, destination, item.lyDo ?? dto.ghiChu ?? null],
@@ -344,10 +349,10 @@ export class TransferService {
       }
 
       if (Array.isArray(dto.danhSachKyDuyet)) {
-        await this.dbConnection.execute('DELETE FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN WHERE SoPhieu = ?', [soPhieu]);
+        await connection.execute('DELETE FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN WHERE SoPhieu = ?', [soPhieu]);
 
         for (const approver of dto.danhSachKyDuyet) {
-          await this.dbConnection.execute(
+          await connection.execute(
             `INSERT INTO PHIEU_DIEU_CHUYEN_NHAN_VIEN (SoPhieu, MaNhanVien, VongKy, TenVaiTro, TrangThaiKy)
              VALUES (?, ?, ?, ?, 'CHO_KY')`,
             [soPhieu, approver.maNhanVien, approver.vongKy ?? 1, approver.tenVaiTro ?? null],
@@ -355,11 +360,13 @@ export class TransferService {
         }
       }
 
-      await this.dbConnection.commit();
+      await connection.commit();
       return this.getSlipDetail(soPhieu);
     } catch (error) {
-      await this.dbConnection.rollback();
+      await connection.rollback();
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -399,10 +406,11 @@ export class TransferService {
 
     const vongKy = dto.vongKy ?? 1;
 
-    await this.dbConnection.beginTransaction();
+    const connection = await this.dbConnection.getConnection();
+    await connection.beginTransaction();
 
     try {
-      const [signatureRows] = await this.dbConnection.query<RowDataPacket[]>(
+      const [signatureRows] = await connection.query<RowDataPacket[]>(
         `SELECT SoPhieu, MaNhanVien, VongKy
          FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN
          WHERE SoPhieu = ? AND MaNhanVien = ? AND VongKy = ?
@@ -411,7 +419,7 @@ export class TransferService {
       );
 
       if (signatureRows.length === 0) {
-        await this.dbConnection.execute(
+        await connection.execute(
           `INSERT INTO PHIEU_DIEU_CHUYEN_NHAN_VIEN (SoPhieu, MaNhanVien, VongKy, TenVaiTro, ThoiGianKy, TrangThaiKy, LyDoTuChoi)
            VALUES (?, ?, ?, ?, NOW(), ?, ?)`,
           [
@@ -424,7 +432,7 @@ export class TransferService {
           ],
         );
       } else {
-        await this.dbConnection.execute(
+        await connection.execute(
           `UPDATE PHIEU_DIEU_CHUYEN_NHAN_VIEN
            SET TenVaiTro = ?, ThoiGianKy = NOW(), TrangThaiKy = ?, LyDoTuChoi = ?
            WHERE SoPhieu = ? AND MaNhanVien = ? AND VongKy = ?`,
@@ -440,15 +448,15 @@ export class TransferService {
       }
 
       if (dto.hanhDong === 'TU_CHOI') {
-        await this.dbConnection.execute(
+        await connection.execute(
           `UPDATE PHIEU_DIEU_CHUYEN SET TrangThaiDuyet = 'TU_CHOI' WHERE SoPhieu = ?`,
           [soPhieu],
         );
-        await this.dbConnection.commit();
+        await connection.commit();
         return this.getSlipDetail(soPhieu);
       }
 
-      const [pendingRows] = await this.dbConnection.query<RowDataPacket[]>(
+      const [pendingRows] = await connection.query<RowDataPacket[]>(
         `SELECT COUNT(*) AS TongPending
          FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN
          WHERE SoPhieu = ? AND TrangThaiKy = 'CHO_KY'`,
@@ -458,14 +466,16 @@ export class TransferService {
       const totalPending = Number(pendingRows[0]?.TongPending ?? 0);
 
       if (totalPending === 0) {
-        await this.finalizeTransfer(soPhieu);
+        await this.finalizeTransfer(soPhieu, connection);
       }
 
-      await this.dbConnection.commit();
+      await connection.commit();
       return this.getSlipDetail(soPhieu);
     } catch (error) {
-      await this.dbConnection.rollback();
+      await connection.rollback();
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -544,12 +554,13 @@ export class TransferService {
     return rows[0];
   }
 
-  private async resolveAsset(maTaiSan?: string, maQR?: string) {
+  private async resolveAsset(maTaiSan?: string, maQR?: string, connection?: PoolConnection) {
     if (!maTaiSan && !maQR) {
       throw new BadRequestException('Can co ma tai san hoac ma QR');
     }
 
-    const [rows] = await this.dbConnection.query<AssetRow[]>(
+    const conn = connection ?? this.dbConnection;
+    const [rows] = await conn.query<AssetRow[]>(
       `SELECT MaTaiSan, MaQR, TenTaiSan, MaPhongBanHienTai
        FROM TAI_SAN
        WHERE ${maTaiSan ? 'MaTaiSan = ?' : 'MaQR = ?'}
@@ -564,8 +575,9 @@ export class TransferService {
     return rows[0];
   }
 
-  private async finalizeTransfer(soPhieu: string) {
-    const [items] = await this.dbConnection.query<RowDataPacket[]>(
+  private async finalizeTransfer(soPhieu: string, connection?: PoolConnection) {
+    const conn = connection ?? this.dbConnection;
+    const [items] = await conn.query<RowDataPacket[]>(
       `SELECT MaTaiSan, DenPhongBan
        FROM CHI_TIET_PHIEU_DIEU_CHUYEN
        WHERE SoPhieu = ?`,
@@ -573,13 +585,13 @@ export class TransferService {
     );
 
     for (const item of items) {
-      await this.dbConnection.execute(
+      await conn.execute(
         `UPDATE TAI_SAN SET MaPhongBanHienTai = ? WHERE MaTaiSan = ?`,
         [item.DenPhongBan, item.MaTaiSan],
       );
     }
 
-    await this.dbConnection.execute(
+    await conn.execute(
       `UPDATE PHIEU_DIEU_CHUYEN SET TrangThaiDuyet = 'DA_DUYET' WHERE SoPhieu = ?`,
       [soPhieu],
     );

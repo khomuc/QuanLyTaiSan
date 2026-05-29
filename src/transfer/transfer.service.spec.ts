@@ -9,6 +9,7 @@ describe('TransferService', () => {
     rollback: jest.Mock;
     execute: jest.Mock;
     query: jest.Mock;
+    getConnection: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -18,7 +19,10 @@ describe('TransferService', () => {
       rollback: jest.fn().mockResolvedValue(undefined),
       execute: jest.fn().mockResolvedValue([{ affectedRows: 1 }]),
       query: jest.fn(),
+      getConnection: jest.fn(),
     };
+    (dbConnection as any).release = jest.fn().mockResolvedValue(undefined);
+    dbConnection.getConnection.mockResolvedValue(dbConnection);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
