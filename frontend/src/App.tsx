@@ -1722,6 +1722,7 @@ function TransferPage({
   onRefresh,
   setToast,
 }: TransferPageProps) {
+  const [activeTab, setActiveTab] = useState<'create' | 'history' | 'reports'>('create');
   const [nguoiLap, setNguoiLap] = useState('NV0001');
   const [ghiChu, setGhiChu] = useState('');
   const [sourceDept, setSourceDept] = useState('');
@@ -1739,15 +1740,16 @@ function TransferPage({
   }, [assets, sourceDept]);
 
   const loadSample = () => {
-    setGhiChu('Dieu chuyen phuc vu cong tac chuyen mon');
+    setGhiChu('Điều chuyển thiết bị tin học phục vụ giảng dạy');
     setSourceDept('PB01');
     setAssetRows([
-      { maTaiSan: 'TS0001', denPhongBan: 'PB02', lyDo: 'Dieu phoi cong tac' },
-      { maTaiSan: 'TS0002', denPhongBan: 'PB03', lyDo: 'Sap xep lai phong ban' }
+      { maTaiSan: 'TS0001', denPhongBan: 'PB02', lyDo: 'Điều phối công tác chuyên môn' },
+      { maTaiSan: 'TS0002', denPhongBan: 'PB03', lyDo: 'Hỗ trợ kỹ thuật thực hành' }
     ]);
     setApproverRows([
-      { maNhanVien: 'NV0001', tenVaiTro: 'Hieu truong', vongKy: 1 }
+      { maNhanVien: 'NV0001', tenVaiTro: 'Hiệu trưởng', vongKy: 1 }
     ]);
+    setToast('Đã điền dữ liệu mẫu thành công!');
   };
 
   const addAssetRow = () => {
@@ -1782,22 +1784,22 @@ function TransferPage({
   const applyDepartmentToAll = () => {
     const firstDest = assetRows[0]?.denPhongBan;
     if (!firstDest) {
-      setToast('Chua chon phong ban den o dong dau tien');
+      setToast('Chưa chọn phòng ban nhận ở dòng đầu tiên!');
       return;
     }
     setAssetRows(assetRows.map(row => ({ ...row, denPhongBan: firstDest })));
-    setToast('Da ap dung phong ban cho tat ca');
+    setToast('Đã áp dụng phòng ban nhận cho toàn bộ dòng!');
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nguoiLap.trim()) {
-      setToast('Nguoi lap khong duoc de trong');
+      setToast('Người lập không được để trống!');
       return;
     }
     const cleanAssets = assetRows.filter(r => r.maTaiSan && r.denPhongBan);
     if (cleanAssets.length === 0) {
-      setToast('Can chon it nhat 1 tai san va phong ban den');
+      setToast('Cần chọn ít nhất 1 tài sản và phòng ban đến!');
       return;
     }
     const cleanApprovers = approverRows.filter(r => r.maNhanVien);
@@ -1815,13 +1817,14 @@ function TransferPage({
       };
 
       const result = await api.createTransferSlip(payload);
-      setToast(`Da tao phieu ${result.SoPhieu} thanh cong!`);
+      setToast(`Đã tạo thành công phiếu ${result.SoPhieu}!`);
       setGhiChu('');
       setAssetRows([{ maTaiSan: '', denPhongBan: '', lyDo: '' }]);
       setApproverRows([{ maNhanVien: '', tenVaiTro: '', vongKy: 1 }]);
+      setActiveTab('history');
       onRefresh();
     } catch (err: any) {
-      setToast(`Loi: ${err.message || 'Khong the tao phieu'}`);
+      setToast(`Lỗi: ${err.message || 'Không thể tạo phiếu'}`);
     }
   };
 
@@ -1831,91 +1834,184 @@ function TransferPage({
   }, [slips, statusFilter]);
 
   return (
-    <div className="two-column">
-      <section className="panel span-2">
-        <div className="panel-header">
-          <h2>Tao phieu dieu chuyen moi</h2>
-          <div className="panel-actions">
-            <button className="secondary-button" onClick={loadSample} type="button">
-              Load du lieu mau
-            </button>
-            <button className="primary-button" onClick={submit} type="button">
-              <Save size={18} />
-              Tao phieu
-            </button>
-          </div>
-        </div>
+    <div className="assets-layout">
+      {/* Premium navigation tabs */}
+      <div className="transfer-tabs">
+        <button
+          className={`transfer-tab-btn ${activeTab === 'create' ? 'active' : ''}`}
+          onClick={() => setActiveTab('create')}
+          type="button"
+        >
+          <Edit3 size={16} />
+          Lập phiếu điều chuyển
+        </button>
+        <button
+          className={`transfer-tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+          type="button"
+        >
+          <FileClock size={16} />
+          Lịch sử phiếu ({slips.length})
+        </button>
+        <button
+          className={`transfer-tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+          type="button"
+        >
+          <BarChart3 size={16} />
+          Thống kê luân chuyển
+        </button>
+      </div>
 
-        <form onSubmit={submit} className="stack-form">
-          <div className="settings-grid">
-            <label>
-              Nguoi lap (Ma Nhan vien)
-              <select value={nguoiLap} onChange={e => setNguoiLap(e.target.value)}>
-                {employees.map(emp => (
-                  <option key={emp.maNhanVien} value={emp.maNhanVien}>
-                    {emp.maNhanVien} - {emp.hoTen}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Phong ban nguon
-              <select value={sourceDept} onChange={e => {
-                setSourceDept(e.target.value);
-                setAssetRows([{ maTaiSan: '', denPhongBan: '', lyDo: '' }]);
-              }}>
-                <option value="">-- Chon tat ca phong ban --</option>
-                {departments.map(d => (
-                  <option key={d.maPhongBan} value={d.maPhongBan}>
-                    {d.maPhongBan} - {d.tenPhongBan}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="span-2">
-              Ghi chu phieu
-              <input
-                value={ghiChu}
-                onChange={e => setGhiChu(e.target.value)}
-                placeholder="Nhap ghi chu cho phieu dieu chuyen..."
-              />
-            </label>
-          </div>
-
-          <div style={{ marginTop: '20px' }}>
-            <div className="panel-header" style={{ padding: '10px 0' }}>
-              <h3>Danh sach tai san dieu chuyen</h3>
-              <div className="panel-actions">
-                <button className="secondary-button" onClick={applyDepartmentToAll} type="button">
-                  Ap dung PB den cho tat ca
+      {activeTab === 'create' && (
+        <div className="two-column" style={{ gridTemplateColumns: '1fr 1.6fr' }}>
+          {/* General slip configuration (Left Column) */}
+          <div style={{ display: 'grid', gap: '16px', alignContent: 'start' }}>
+            <section className="panel">
+              <div className="panel-header">
+                <h2>Thông tin chung</h2>
+                <button className="secondary-button" onClick={loadSample} type="button" style={{ height: '32px', minHeight: '32px' }}>
+                  Load mẫu
                 </button>
-                <button className="secondary-button" onClick={addAssetRow} type="button">
-                  <Plus size={16} /> Them tai san
+              </div>
+              <div className="stack-form">
+                <label>
+                  Người lập phiếu
+                  <select value={nguoiLap} onChange={e => setNguoiLap(e.target.value)}>
+                    {employees.map(emp => (
+                      <option key={emp.maNhanVien} value={emp.maNhanVien}>
+                        {emp.maNhanVien} - {emp.hoTen}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={{ marginTop: '12px' }}>
+                  Phòng ban nguồn
+                  <select value={sourceDept} onChange={e => {
+                    setSourceDept(e.target.value);
+                    setAssetRows([{ maTaiSan: '', denPhongBan: '', lyDo: '' }]);
+                  }}>
+                    <option value="">-- Chọn tất cả phòng ban --</option>
+                    {departments.map(d => (
+                      <option key={d.maPhongBan} value={d.maPhongBan}>
+                        {d.maPhongBan} - {d.tenPhongBan}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={{ marginTop: '12px' }}>
+                  Ghi chú tổng thể
+                  <input
+                    value={ghiChu}
+                    onChange={e => setGhiChu(e.target.value)}
+                    placeholder="Mô tả mục đích điều chuyển..."
+                  />
+                </label>
+              </div>
+            </section>
+
+            {/* Signature workflow (Approvers) */}
+            <section className="panel">
+              <div className="panel-header">
+                <h2>Tuyến ký duyệt</h2>
+                <button className="secondary-button" onClick={addApproverRow} type="button" style={{ height: '32px', minHeight: '32px' }}>
+                  <Plus size={14} /> Thêm người ký
+                </button>
+              </div>
+
+              <div className="compact-list">
+                {approverRows.map((row, index) => (
+                  <div className="transfer-approver-row" key={index}>
+                    <label style={{ margin: 0 }}>
+                      Người duyệt
+                      <select
+                        value={row.maNhanVien}
+                        onChange={e => {
+                          const emp = employees.find(emp => emp.maNhanVien === e.target.value);
+                          updateApproverRow(index, 'maNhanVien', e.target.value);
+                          if (emp) {
+                            updateApproverRow(index, 'tenVaiTro', emp.tenVaiTro || emp.chucVu || '');
+                          }
+                        }}
+                      >
+                        <option value="">-- Chọn --</option>
+                        {employees.map(emp => (
+                          <option key={emp.maNhanVien} value={emp.maNhanVien}>
+                            {emp.hoTen} ({emp.maNhanVien})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label style={{ margin: 0 }}>
+                      Vai trò ký
+                      <input
+                        value={row.tenVaiTro}
+                        onChange={e => updateApproverRow(index, 'tenVaiTro', e.target.value)}
+                        placeholder="Ví dụ: Hiệu trưởng"
+                      />
+                    </label>
+
+                    <label style={{ margin: 0 }}>
+                      Thứ tự
+                      <input
+                        type="number"
+                        value={row.vongKy}
+                        onChange={e => updateApproverRow(index, 'vongKy', Number(e.target.value))}
+                        min="1"
+                      />
+                    </label>
+
+                    <div style={{ paddingBottom: '2px' }}>
+                      {approverRows.length > 1 && (
+                        <button
+                          className="icon-button danger"
+                          onClick={() => removeApproverRow(index)}
+                          type="button"
+                          title="Xóa"
+                          style={{ height: '40px', width: '40px' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <button className="primary-button" onClick={submit} type="button" style={{ height: '46px' }}>
+              <Save size={18} />
+              Tạo phiếu điều chuyển
+            </button>
+          </div>
+
+          {/* Chosen Assets editor (Right Column) */}
+          <section className="panel" style={{ display: 'grid', alignContent: 'start' }}>
+            <div className="panel-header">
+              <h2>Tài sản điều chuyển ({assetRows.filter(r => r.maTaiSan).length})</h2>
+              <div className="button-row">
+                <button className="secondary-button" onClick={applyDepartmentToAll} type="button" style={{ height: '32px', minHeight: '32px' }}>
+                  Áp dụng nhanh phòng nhận
+                </button>
+                <button className="primary-button" onClick={addAssetRow} type="button" style={{ height: '32px', minHeight: '32px' }}>
+                  <Plus size={14} /> Thêm dòng
                 </button>
               </div>
             </div>
 
-            <div className="stack-list">
+            <div className="compact-list" style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', paddingRight: '4px' }}>
               {assetRows.map((row, index) => (
-                <div className="asset-row-editor" key={index} style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 2fr 3fr auto',
-                  gap: '10px',
-                  alignItems: 'center',
-                  marginBottom: '10px',
-                  background: 'rgba(255,255,255,0.05)',
-                  padding: '10px',
-                  borderRadius: '6px'
-                }}>
+                <div className="transfer-asset-row" key={index}>
                   <label style={{ margin: 0 }}>
-                    Tai san
+                    Chọn tài sản
                     <select
                       value={row.maTaiSan}
                       onChange={e => updateAssetRow(index, 'maTaiSan', e.target.value)}
                     >
-                      <option value="">-- Chon tai san --</option>
+                      <option value="">-- Chọn tài sản nguồn --</option>
                       {filteredSourceAssets.map(a => (
                         <option key={a.maTaiSan} value={a.maTaiSan}>
                           {a.tenTaiSan} ({a.maQR || a.maTaiSan})
@@ -1925,12 +2021,12 @@ function TransferPage({
                   </label>
 
                   <label style={{ margin: 0 }}>
-                    Phong ban den
+                    Phòng ban nhận
                     <select
                       value={row.denPhongBan}
                       onChange={e => updateAssetRow(index, 'denPhongBan', e.target.value)}
                     >
-                      <option value="">-- Chon phong ban --</option>
+                      <option value="">-- Chọn phòng ban nhận --</option>
                       {departments.map(d => (
                         <option key={d.maPhongBan} value={d.maPhongBan}>
                           {d.maPhongBan} - {d.tenPhongBan}
@@ -1940,20 +2036,21 @@ function TransferPage({
                   </label>
 
                   <label style={{ margin: 0 }}>
-                    Ly do dieu chuyen
+                    Lý do riêng biệt
                     <input
                       value={row.lyDo}
                       onChange={e => updateAssetRow(index, 'lyDo', e.target.value)}
-                      placeholder="Ly do..."
+                      placeholder="Lý do chi tiết dòng..."
                     />
                   </label>
 
-                  <div style={{ display: 'flex', gap: '5px', marginTop: '16px' }}>
+                  <div style={{ display: 'flex', gap: '4px', paddingBottom: '2px' }}>
                     <button
                       className="icon-button"
                       onClick={() => duplicateAssetRow(index)}
                       type="button"
-                      title="Nhan ban"
+                      title="Nhân bản dòng"
+                      style={{ height: '40px', width: '40px' }}
                     >
                       <Plus size={16} />
                     </button>
@@ -1962,7 +2059,8 @@ function TransferPage({
                         className="icon-button danger"
                         onClick={() => removeAssetRow(index)}
                         type="button"
-                        title="Xoa"
+                        title="Xóa"
+                        style={{ height: '40px', width: '40px' }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -1971,195 +2069,137 @@ function TransferPage({
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+        </div>
+      )}
 
-          <div style={{ marginTop: '20px' }}>
-            <div className="panel-header" style={{ padding: '10px 0' }}>
-              <h3>Tuyen duyet (Danh sach ky duyet)</h3>
-              <button className="secondary-button" onClick={addApproverRow} type="button">
-                <Plus size={16} /> Them nguoi ky
+      {activeTab === 'history' && (
+        <section className="panel full">
+          <div className="panel-header">
+            <h2>Lịch sử phiếu điều chuyển</h2>
+            <div className="panel-actions">
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                style={{ width: '180px', height: '36px', minHeight: '36px' }}
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="CHO_KY">Chờ ký duyệt</option>
+                <option value="DA_DUYET">Đã phê duyệt</option>
+                <option value="TU_CHOI">Bị từ chối</option>
+              </select>
+              <button className="icon-button" onClick={onRefresh} title="Tải lại">
+                <RefreshCw size={18} />
               </button>
             </div>
+          </div>
 
-            <div className="stack-list">
-              {approverRows.map((row, index) => (
-                <div className="approver-row-editor" key={index} style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 2fr 1fr auto',
-                  gap: '10px',
-                  alignItems: 'center',
-                  marginBottom: '10px',
-                  background: 'rgba(255,255,255,0.05)',
-                  padding: '10px',
-                  borderRadius: '6px'
-                }}>
-                  <label style={{ margin: 0 }}>
-                    Nhan vien ky duyet
-                    <select
-                      value={row.maNhanVien}
-                      onChange={e => {
-                        const emp = employees.find(emp => emp.maNhanVien === e.target.value);
-                        updateApproverRow(index, 'maNhanVien', e.target.value);
-                        if (emp) {
-                          updateApproverRow(index, 'tenVaiTro', emp.tenVaiTro || emp.chucVu || '');
-                        }
-                      }}
-                    >
-                      <option value="">-- Chon nhan vien --</option>
-                      {employees.map(emp => (
-                        <option key={emp.maNhanVien} value={emp.maNhanVien}>
-                          {emp.maNhanVien} - {emp.hoTen}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Số Phiếu</th>
+                  <th>Ngày Điều Chuyển</th>
+                  <th>Trạng Thái</th>
+                  <th>Người Lập</th>
+                  <th>Số Tài Sản</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSlips.map(slip => (
+                  <tr key={slip.SoPhieu}>
+                    <td><strong>{slip.SoPhieu}</strong></td>
+                    <td>{slip.NgayDieuChuyen ? String(slip.NgayDieuChuyen).slice(0, 10) : ''}</td>
+                    <td><StatusPill value={slip.TrangThaiDuyet} /></td>
+                    <td>{slip.NguoiLapTen || slip.NguoiLap}</td>
+                    <td>{slip.TongTaiSan || 0} tài sản</td>
+                  </tr>
+                ))}
+                {!filteredSlips.length && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '24px' }}>
+                      <EmptyState text="Không tìm thấy phiếu điều chuyển nào phù hợp." />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
-                  <label style={{ margin: 0 }}>
-                    Ten vai tro ky
-                    <input
-                      value={row.tenVaiTro}
-                      onChange={e => updateApproverRow(index, 'tenVaiTro', e.target.value)}
-                      placeholder="Chuc vu ky..."
-                    />
-                  </label>
-
-                  <label style={{ margin: 0 }}>
-                    Vong ky
-                    <input
-                      type="number"
-                      value={row.vongKy}
-                      onChange={e => updateApproverRow(index, 'vongKy', Number(e.target.value))}
-                      min="1"
-                    />
-                  </label>
-
-                  <div style={{ marginTop: '16px' }}>
-                    {approverRows.length > 1 && (
-                      <button
-                        className="icon-button danger"
-                        onClick={() => removeApproverRow(index)}
-                        type="button"
-                        title="Xoa"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+      {activeTab === 'reports' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          {/* Summary flows cards */}
+          <section className="panel full">
+            <div className="panel-header" style={{ marginBottom: '14px' }}>
+              <h2>Dòng điều chuyển tích lũy (Đã duyệt)</h2>
+            </div>
+            <div className="history-stats-grid">
+              {(history.summary || []).map((item: any, idx: number) => (
+                <div className="history-stat-card" key={idx}>
+                  <div className="history-stat-flow">
+                    <div className="history-stat-dept">
+                      <span>TỪ PHÒNG</span>
+                      <strong>{item.TuPhongBanTen || item.TuPhongBan}</strong>
+                    </div>
+                    <div className="history-stat-arrow">➜</div>
+                    <div className="history-stat-dept">
+                      <span>ĐẾN PHÒNG</span>
+                      <strong>{item.DenPhongBanTen || item.DenPhongBan}</strong>
+                    </div>
+                  </div>
+                  <div className="history-stat-count">
+                    {item.SoLuongTaiSan} <span>tài sản</span>
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </form>
-      </section>
-
-      <section className="panel span-2">
-        <div className="panel-header">
-          <h2>Lich su phieu dieu chuyen</h2>
-          <div className="panel-actions">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option value="">Tat ca trang thai</option>
-              <option value="CHO_KY">CHO_KY</option>
-              <option value="DA_DUYET">DA_DUYET</option>
-              <option value="TU_CHOI">TU_CHOI</option>
-            </select>
-            <button className="icon-button" onClick={onRefresh} title="Tai lai">
-              <RefreshCw size={18} />
-            </button>
-          </div>
-        </div>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>So Phieu</th>
-                <th>Ngay Dieu Chuyen</th>
-                <th>Trang Thai</th>
-                <th>Nguoi Lap</th>
-                <th>So Tai San</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSlips.map(slip => (
-                <tr key={slip.SoPhieu}>
-                  <td><strong>{slip.SoPhieu}</strong></td>
-                  <td>{slip.NgayDieuChuyen ? String(slip.NgayDieuChuyen).slice(0, 10) : ''}</td>
-                  <td><StatusPill value={slip.TrangThaiDuyet} /></td>
-                  <td>{slip.NguoiLapTen || slip.NguoiLap}</td>
-                  <td>{slip.TongTaiSan || 0}</td>
-                </tr>
-              ))}
-              {!filteredSlips.length && (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: 'center' }}>
-                    Khong co phieu dieu chuyen nao
-                  </td>
-                </tr>
+              {!(history.summary || []).length && (
+                <EmptyState text="Chưa có luồng điều chuyển nào được hoàn tất ký duyệt." />
               )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="panel span-2">
-        <div className="panel-header">
-          <h2>Bao cao lich su & Thong ke dieu chuyen</h2>
-        </div>
-        <div className="panel-header" style={{ padding: '5px 0' }}>
-          <h3>Tong quan luong tai san</h3>
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-          gap: '15px',
-          marginBottom: '20px'
-        }}>
-          {(history.summary || []).map((item: any, idx: number) => (
-            <div key={idx} style={{
-              background: 'rgba(255,255,255,0.05)',
-              padding: '15px',
-              borderRadius: '8px',
-              borderLeft: '4px solid var(--accent-amber, #f59e0b)'
-            }}>
-              <div style={{ fontSize: '12px', opacity: 0.7 }}>Tu phong</div>
-              <strong style={{ display: 'block', fontSize: '14px' }}>{item.TuPhongBanTen || item.TuPhongBan}</strong>
-              <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '5px' }}>Den phong</div>
-              <strong style={{ display: 'block', fontSize: '14px' }}>{item.DenPhongBanTen || item.DenPhongBan}</strong>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '10px', color: 'var(--accent-amber, #f59e0b)' }}>
-                {item.SoLuongTaiSan} tai san
-              </div>
             </div>
-          ))}
-          {!(history.summary || []).length && (
-            <EmptyState text="Chua co thong ke dieu chuyen" />
-          )}
-        </div>
+          </section>
 
-        <div className="panel-header" style={{ padding: '5px 0' }}>
-          <h3>Chi tiet dieu chuyen da duyet</h3>
-        </div>
-        <div className="compact-list">
-          {(history.items || []).map((item: any, idx: number) => (
-            <div className="compact-item" key={idx}>
-              <div>
-                <strong>{item.SoPhieu} - {item.TenTaiSan}</strong>
-                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>
-                  {item.TuPhongBanTen || item.TuPhongBan} → {item.DenPhongBanTen || item.DenPhongBan}
-                </div>
-                <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>
-                  Ly do: {item.LyDo || 'Khong co ghi chu ly do'}
-                </div>
-              </div>
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                Nguoi lap: {item.NguoiLapTen || item.NguoiLap}
-              </div>
+          {/* Slips details log */}
+          <section className="panel full">
+            <div className="panel-header">
+              <h2>Chi tiết nhật ký điều chuyển tài sản</h2>
             </div>
-          ))}
-          {!(history.items || []).length && (
-            <EmptyState text="Chua co thong tin lich su dieu chuyen" />
-          )}
+            <div className="compact-list">
+              {(history.items || []).map((item: any, idx: number) => (
+                <div className="compact-item" key={idx} style={{
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '0.74rem', color: '#2e795b', fontWeight: 'bold' }}>{item.SoPhieu}</span>
+                    <strong style={{ fontSize: '1rem', marginTop: '2px', color: '#24312f' }}>{item.TenTaiSan}</strong>
+                    <div style={{ fontSize: '0.84rem', color: '#6a766f', marginTop: '4px' }}>
+                      Luân chuyển: <strong>{item.TuPhongBanTen || item.TuPhongBan}</strong> ➜ <strong>{item.DenPhongBanTen || item.DenPhongBan}</strong>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#8fa099', marginTop: '2px', fontStyle: 'italic' }}>
+                      Lý do: {item.LyDo || 'Không có lý do riêng'}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.84rem', color: '#24312f' }}>
+                      Lập bởi: <strong>{item.NguoiLapTen || item.NguoiLap}</strong>
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#8fa099', marginTop: '2px' }}>
+                      {item.NgayDieuChuyen ? String(item.NgayDieuChuyen).slice(0, 10) : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {!(history.items || []).length && (
+                <EmptyState text="Chưa có thông tin chi tiết lịch sử điều chuyển." />
+              )}
+            </div>
+          </section>
         </div>
-      </section>
+      )}
     </div>
   );
 }

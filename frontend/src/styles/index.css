@@ -1055,3 +1055,151 @@ td span {
     grid-column: auto;
   }
 }
+
+/* ==========================================
+   PREMIUM TRANSFER PAGE STYLES
+   ========================================== */
+
+/* Transfer page tab styles */
+.transfer-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #dce5df;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+}
+
+.transfer-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #516159;
+  font-weight: 700;
+  font-size: 0.92rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transfer-tab-btn:hover {
+  background: rgba(46, 121, 91, 0.06);
+  color: #2e795b;
+}
+
+.transfer-tab-btn.active {
+  background: #eff8f2;
+  color: #16643d;
+  box-shadow: 0 4px 14px rgba(37, 104, 77, 0.08);
+}
+
+/* Transfer form row editors */
+.transfer-asset-row,
+.transfer-approver-row {
+  display: grid;
+  align-items: end;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #fbfcfb;
+  margin-bottom: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.transfer-asset-row:hover,
+.transfer-approver-row:hover {
+  border-color: #79b696;
+  box-shadow: 0 6px 18px rgba(32, 48, 45, 0.05);
+}
+
+.transfer-asset-row {
+  grid-template-columns: 1.5fr 1.5fr 2fr auto;
+}
+
+.transfer-approver-row {
+  grid-template-columns: 1.5fr 1.5fr 0.8fr auto;
+}
+
+/* History summary stats styling */
+.history-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.history-stat-card {
+  padding: 20px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff, #f7faf8);
+  box-shadow: 0 10px 24px rgba(32, 48, 45, 0.04);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(32, 48, 45, 0.06);
+}
+
+.history-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #2e795b;
+}
+
+.history-stat-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.history-stat-arrow {
+  color: #8fa099;
+  font-weight: bold;
+}
+
+.history-stat-dept {
+  max-width: 45%;
+}
+
+.history-stat-dept span {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #8fa099;
+  font-weight: 800;
+}
+
+.history-stat-dept strong {
+  display: block;
+  font-size: 0.94rem;
+  color: #24312f;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-stat-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #2e795b;
+}
+
+.history-stat-count span {
+  font-size: 0.8rem;
+  color: #6a766f;
+  font-weight: 500;
+}
