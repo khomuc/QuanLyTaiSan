@@ -283,7 +283,7 @@ h3 {
   min-width: 0;
 }
 
-.assets-layout > * {
+.assets-layout>* {
   grid-column: 1 / -1;
   min-width: 0;
 }
@@ -342,8 +342,8 @@ h3 {
   width: 100%;
 }
 
-.page-grid > .panel.full,
-.page-grid > .span-2 {
+.page-grid>.panel.full,
+.page-grid>.span-2 {
   grid-column: span 2;
 }
 
@@ -919,6 +919,7 @@ td span {
   from {
     background-position: 0 0;
   }
+
   to {
     background-position: 240px 0;
   }
@@ -1056,9 +1057,6 @@ td span {
   }
 }
 
-/* ==========================================
-   PREMIUM TRANSFER PAGE STYLES
-   ========================================== */
 
 /* Transfer page tab styles */
 .transfer-tabs {
