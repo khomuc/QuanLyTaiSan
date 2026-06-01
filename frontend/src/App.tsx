@@ -153,9 +153,10 @@ function App() {
     }
   }, [roles, selectedRoleId]);
 
-  function navigate(nextView: ViewKey) {
-    if (!user || canAccessView(user, nextView)) {
-      setView(nextView);
+  function navigate(nextView: string) {
+    const view = nextView as ViewKey;
+    if (!user || canAccessView(user, view)) {
+      setView(view);
       return;
     }
     setToast('Tai khoan khong co quyen truy cap trang nay');
