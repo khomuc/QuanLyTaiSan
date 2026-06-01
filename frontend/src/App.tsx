@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { ViewKey } from '../lib/types'; 
 import { AppLayout } from './components/AppLayout';
 import { EmployeeModal } from './components/EmployeeModal';
 import { Toast } from './components/Toast';
@@ -585,7 +584,6 @@ function App() {
         onNavigate={navigate}
         onReload={() => void loadView(view)}
         user={user}
-        view={view}
       >
         <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
           {renderPage()}
