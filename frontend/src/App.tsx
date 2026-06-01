@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
+import type { ViewKey } from '../lib/types'; 
 import { AppLayout } from './components/AppLayout';
 import { EmployeeModal } from './components/EmployeeModal';
 import { Toast } from './components/Toast';
