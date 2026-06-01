@@ -352,7 +352,7 @@ QuanLyTaiSan/
 
 ```bash
 # 1. Clone & checkout
-git clone https://github.com/nnhhhoang/QuanLyTaiSan.git
+git clone https://github.com/khomuc/QuanLyTaiSan.git
 cd QuanLyTaiSan
 git checkout test
 
