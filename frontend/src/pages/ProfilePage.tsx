@@ -26,6 +26,7 @@ export default function ProfilePage({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     setProfileDraft({
@@ -34,7 +35,17 @@ export default function ProfilePage({
       soDienThoai: user.soDienThoai ?? '',
       maPhongBan: user.maPhongBan ?? departments[0]?.maPhongBan ?? '',
     });
+    setHasChanges(false);
   }, [departments, user]);
+
+  const detectChanges = () => {
+    setHasChanges(
+      profileDraft.hoTen !== user.hoTen ||
+        profileDraft.chucVu !== (user.chucVu ?? '') ||
+        profileDraft.soDienThoai !== (user.soDienThoai ?? '') ||
+        profileDraft.maPhongBan !== user.maPhongBan
+    );
+  };
 
   async function submitProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +56,7 @@ export default function ProfilePage({
         chucVu: profileDraft.chucVu || null,
         soDienThoai: profileDraft.soDienThoai || null,
       });
+      setHasChanges(false);
     } finally {
       setSavingProfile(false);
     }
@@ -72,7 +84,9 @@ export default function ProfilePage({
           <div className="avatar">{user.hoTen.slice(0, 1)}</div>
           <strong>{user.hoTen}</strong>
           <span>{user.email}</span>
-          <span>{user.tenPhongBan ?? user.maPhongBan ?? 'Chua gan phong ban'}</span>
+          <span>
+            {user.tenPhongBan ?? user.maPhongBan ?? 'Chua gan phong ban'}
+          </span>
           <StatusPill value={user.tenVaiTro ?? user.maVaiTro} />
         </div>
       </section>
@@ -85,9 +99,10 @@ export default function ProfilePage({
           <label>
             Ho ten
             <input
-              onChange={(event) =>
-                setProfileDraft({ ...profileDraft, hoTen: event.target.value })
-              }
+              onChange={(event) => {
+                setProfileDraft({ ...profileDraft, hoTen: event.target.value });
+                detectChanges();
+              }}
               required
               value={profileDraft.hoTen}
             />
@@ -99,44 +114,57 @@ export default function ProfilePage({
           <label>
             Chuc vu
             <input
-              onChange={(event) =>
-                setProfileDraft({ ...profileDraft, chucVu: event.target.value })
-              }
+              onChange={(event) => {
+                setProfileDraft({
+                  ...profileDraft,
+                  chucVu: event.target.value,
+                });
+                detectChanges();
+              }}
               value={profileDraft.chucVu ?? ''}
             />
           </label>
           <label>
             So dien thoai
             <input
-              onChange={(event) =>
+              onChange={(event) => {
                 setProfileDraft({
                   ...profileDraft,
                   soDienThoai: event.target.value,
-                })
-              }
+                });
+                detectChanges();
+              }}
               value={profileDraft.soDienThoai ?? ''}
             />
           </label>
           <label>
             Phong ban
             <select
-              onChange={(event) =>
+              onChange={(event) => {
                 setProfileDraft({
                   ...profileDraft,
                   maPhongBan: event.target.value,
-                })
-              }
+                });
+                detectChanges();
+              }}
               required
               value={profileDraft.maPhongBan}
             >
               {departments.map((department) => (
-                <option key={department.maPhongBan} value={department.maPhongBan}>
+                <option
+                  key={department.maPhongBan}
+                  value={department.maPhongBan}
+                >
                   {department.tenPhongBan}
                 </option>
               ))}
             </select>
           </label>
-          <button className="primary-button" disabled={savingProfile} type="submit">
+          <button
+            className="primary-button"
+            disabled={savingProfile || !hasChanges}
+            type="submit"
+          >
             <Save size={18} />
             Luu thong tin
           </button>
@@ -193,7 +221,11 @@ export default function ProfilePage({
               </button>
             </div>
           </label>
-          <button className="primary-button" disabled={savingPassword} type="submit">
+          <button
+            className="primary-button"
+            disabled={savingPassword}
+            type="submit"
+          >
             <Save size={18} />
             Cap nhat mat khau
           </button>
