@@ -1,8 +1,8 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { MYSQL_CONNECTION } from '../common/constants';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
-import { EmailService } from './email.service';
+import { MailerService } from '../mailer/mailer.service';
 import { SendApprovalReminderDto } from './send-approval-reminder.dto';
 
 interface ApprovalNotificationRow extends RowDataPacket {
@@ -23,9 +23,11 @@ interface EmployeeEmailRow extends RowDataPacket {
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @Inject(MYSQL_CONNECTION) private readonly db: Pool,
-    private readonly emailService: EmailService,
+    private readonly mailerService: MailerService
   ) {}
 
   async getMyApprovalNotifications(user: AuthUser) {
@@ -37,7 +39,7 @@ export class NotificationsService {
        FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN pk
        INNER JOIN PHIEU_DIEU_CHUYEN p ON p.SoPhieu = pk.SoPhieu
        WHERE pk.MaNhanVien = ? AND pk.TrangThaiKy = 'CHO_KY'`,
-      [user.maNhanVien],
+      [user.maNhanVien]
     );
 
     const [inventoryRows] = await this.db.execute<ApprovalNotificationRow[]>(
@@ -48,92 +50,69 @@ export class NotificationsService {
        FROM PHIEU_KIEM_KE_NHAN_VIEN pk
        INNER JOIN PHIEU_KIEM_KE p ON p.MaKiemKe = pk.MaKiemKe
        WHERE pk.MaNhanVien = ? AND pk.TrangThaiKy = 'CHO_KY'`,
-      [user.maNhanVien],
+      [user.maNhanVien]
     );
 
     return [...transferRows, ...inventoryRows].sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     });
   }
 
-  async sendApprovalReminder(dto: SendApprovalReminderDto, user: AuthUser) {
+  async sendApprovalReminder(
+    dto: SendApprovalReminderDto,
+    user: AuthUser
+  ) {
     const recipient = await this.findEmployee(dto.maNhanVien);
     if (!recipient) {
       throw new NotFoundException('Recipient not found');
     }
 
-    try {
-      const result = await this.emailService.sendApprovalReminder({
-        documentId: dto.maPhieu,
-        documentType: dto.loaiPhieu,
-        recipientName: recipient.HoTen,
-        requestedBy: user.hoTen,
-        to: recipient.Email,
-      });
+    const requester = await this.findEmployee(user.maNhanVien);
 
-      await this.writeEmailAudit(
-        user,
-        dto,
-        'SUCCESS',
-        `recipient=${recipient.MaNhanVien};email=${recipient.Email};messageId=${result.messageId}`,
-      );
+    const emailSent = await this.mailerService.sendApprovalReminder(
+      recipient.Email,
+      recipient.HoTen,
+      dto.loaiPhieu,
+      dto.maPhieu,
+      requester?.HoTen || user.maNhanVien
+    );
 
-      return {
-        sent: true,
-        messageId: result.messageId,
-        to: recipient.Email,
-        documentType: dto.loaiPhieu,
-        documentId: dto.maPhieu,
-      };
-    } catch (error) {
-      await this.writeEmailAudit(
-        user,
-        dto,
-        'FAILED',
-        `recipient=${recipient.MaNhanVien};email=${recipient.Email};error=${this.getErrorMessage(error)}`,
-      );
-      throw error;
-    }
+    await this.db.execute(
+      `INSERT INTO AUDIT_LOG
+       (MaNhanVien, HanhDong, DoiTuong, DoiTuongId, TrangThai, ChiTiet)
+       VALUES (?, 'SEND_APPROVAL_REMINDER', ?, ?, ?, ?)`,
+      [
+        user.maNhanVien,
+        dto.loaiPhieu === 'TRANSFER'
+          ? 'PHIEU_DIEU_CHUYEN'
+          : 'PHIEU_KIEM_KE',
+        dto.maPhieu,
+        emailSent ? 'SUCCESS' : 'FAILED',
+        `recipient=${recipient.MaNhanVien};email=${recipient.Email};sent=${emailSent}`,
+      ]
+    );
+
+    return {
+      sent: emailSent,
+      to: recipient.Email,
+      documentType: dto.loaiPhieu,
+      documentId: dto.maPhieu,
+    };
   }
 
   private async findEmployee(
-    maNhanVien: string,
+    maNhanVien: string
   ): Promise<EmployeeEmailRow | null> {
     const [rows] = await this.db.execute<EmployeeEmailRow[]>(
       `SELECT MaNhanVien, Email, HoTen
        FROM NHAN_VIEN
        WHERE MaNhanVien = ?
        LIMIT 1`,
-      [maNhanVien],
+      [maNhanVien]
     );
 
     return rows[0] ?? null;
-  }
-
-  private async writeEmailAudit(
-    user: AuthUser,
-    dto: SendApprovalReminderDto,
-    status: 'SUCCESS' | 'FAILED',
-    detail: string,
-  ) {
-    await this.db.execute(
-      `INSERT INTO AUDIT_LOG
-       (MaNhanVien, HanhDong, DoiTuong, DoiTuongId, TrangThai, ChiTiet)
-       VALUES (?, 'EMAIL_APPROVAL_REMINDER', ?, ?, ?, ?)`,
-      [
-        user.maNhanVien,
-        dto.loaiPhieu === 'TRANSFER' ? 'PHIEU_DIEU_CHUYEN' : 'PHIEU_KIEM_KE',
-        dto.maPhieu,
-        status,
-        detail,
-      ],
-    );
-  }
-
-  private getErrorMessage(error: unknown) {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    return String(error);
   }
 }
