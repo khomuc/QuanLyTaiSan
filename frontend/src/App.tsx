@@ -579,6 +579,7 @@ function App() {
     <>
       <AppLayout
         apiMode={apiMode}
+        currentView={view}
         loading={loading}
         navItems={visibleNavItems}
         onLogout={logout}
