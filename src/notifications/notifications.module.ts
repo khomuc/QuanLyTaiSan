@@ -8,5 +8,6 @@ import { NotificationsService } from './notifications.service';
   imports: [AuthModule, MailerModule],
   controllers: [NotificationsController],
   providers: [NotificationsService],
+  exports: [NotificationsService], // thêm dòng này
 })
 export class NotificationsModule {}
