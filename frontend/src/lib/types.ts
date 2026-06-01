@@ -1,3 +1,5 @@
+export type ApiMode = 'api' | 'demo';
+
 export type ViewKey =
   | 'dashboard'
   | 'assets'
@@ -12,8 +14,14 @@ export type ViewKey =
 export interface AuthUser {
   maNhanVien: string;
   hoTen: string;
+  chucVu?: string | null;
   email: string;
+  soDienThoai?: string | null;
+  maPhongBan?: string;
+  tenPhongBan?: string | null;
   maVaiTro: string;
+  tenVaiTro?: string | null;
+  trangThai?: 'ACTIVE' | 'INACTIVE';
   permissions: string[];
 }
 
@@ -36,6 +44,25 @@ export interface Employee {
   trangThai: 'ACTIVE' | 'INACTIVE';
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface EmployeeForm {
+  maNhanVien: string;
+  hoTen: string;
+  chucVu: string;
+  email: string;
+  soDienThoai: string;
+  maPhongBan: string;
+  maVaiTro: string;
+  matKhau: string;
+  trangThai: Employee['trangThai'];
+}
+
+export interface ProfileUpdatePayload {
+  hoTen: string;
+  chucVu: string | null;
+  soDienThoai: string | null;
+  maPhongBan: string;
 }
 
 export interface EmployeeList {

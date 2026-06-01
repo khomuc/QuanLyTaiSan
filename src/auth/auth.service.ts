@@ -12,6 +12,7 @@ import { MYSQL_CONNECTION } from '../common/constants';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 interface EmployeeAuthRow extends RowDataPacket {
   MaNhanVien: string;
@@ -28,6 +29,8 @@ interface EmployeeAuthRow extends RowDataPacket {
   CreatedAt: Date;
   UpdatedAt: Date;
 }
+
+const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
 
 @Injectable()
 export class AuthService {
@@ -93,7 +96,10 @@ export class AuthService {
       throw new UnauthorizedException('Old password is incorrect');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.matKhauMoi, 10);
+    const hashedPassword = await bcrypt.hash(
+      dto.matKhauMoi,
+      BCRYPT_SALT_ROUNDS,
+    );
     await this.db.execute(
       'UPDATE NHAN_VIEN SET MatKhau = ? WHERE MaNhanVien = ?',
       [hashedPassword, user.maNhanVien],
@@ -107,6 +113,47 @@ export class AuthService {
     );
 
     return { message: 'Password changed successfully' };
+  }
+
+  async updateProfile(user: AuthUser, dto: UpdateProfileDto) {
+    await this.ensureDepartmentExists(dto.maPhongBan);
+
+    const employee = await this.findEmployeeById(user.maNhanVien);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    await this.db.execute(
+      `UPDATE NHAN_VIEN
+       SET HoTen = ?, ChucVu = ?, SoDienThoai = ?, MaPhongBan = ?
+       WHERE MaNhanVien = ?`,
+      [
+        dto.hoTen,
+        dto.chucVu ?? null,
+        dto.soDienThoai ?? null,
+        dto.maPhongBan,
+        user.maNhanVien,
+      ],
+    );
+
+    await this.writeAudit(
+      user.maNhanVien,
+      'PROFILE_UPDATE',
+      'NHAN_VIEN',
+      user.maNhanVien,
+    );
+
+    return this.getProfile(user);
+  }
+
+  async listDepartments() {
+    const [rows] = await this.db.execute<RowDataPacket[]>(
+      `SELECT MaPhongBan AS maPhongBan, TenPhongBan AS tenPhongBan
+       FROM PHONG_BAN
+       ORDER BY TenPhongBan`,
+    );
+
+    return rows;
   }
 
   async getPermissions(maVaiTro: string): Promise<string[]> {
@@ -149,6 +196,17 @@ export class AuthService {
     return rows[0] ?? null;
   }
 
+  private async ensureDepartmentExists(maPhongBan: string) {
+    const [rows] = await this.db.execute<RowDataPacket[]>(
+      'SELECT MaPhongBan FROM PHONG_BAN WHERE MaPhongBan = ? LIMIT 1',
+      [maPhongBan],
+    );
+
+    if (!rows.length) {
+      throw new NotFoundException('Department not found');
+    }
+  }
+
   private async findEmployeeByEmail(
     email: string,
   ): Promise<EmployeeAuthRow | null> {
@@ -187,7 +245,13 @@ export class AuthService {
       maNhanVien: employee.MaNhanVien,
       email: employee.Email,
       hoTen: employee.HoTen,
+      chucVu: employee.ChucVu,
+      soDienThoai: employee.SoDienThoai,
+      maPhongBan: employee.MaPhongBan,
+      tenPhongBan: employee.TenPhongBan,
       maVaiTro: employee.MaVaiTro,
+      tenVaiTro: employee.TenVaiTro,
+      trangThai: employee.TrangThai,
       permissions,
     };
   }
@@ -204,6 +268,7 @@ export class AuthService {
       maVaiTro: employee.MaVaiTro,
       tenVaiTro: employee.TenVaiTro,
       trangThai: employee.TrangThai,
+      permissions: [],
       createdAt: employee.CreatedAt,
       updatedAt: employee.UpdatedAt,
     };

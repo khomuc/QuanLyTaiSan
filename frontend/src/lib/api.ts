@@ -11,6 +11,7 @@ import type {
   LoginResult,
   NotificationItem,
   Permission,
+  ProfileUpdatePayload,
   Role,
   SystemSettings,
 } from './types';
@@ -73,6 +74,17 @@ export const api = {
 
   me() {
     return request<AuthUser>('/auth/me');
+  },
+
+  updateProfile(payload: ProfileUpdatePayload) {
+    return request<AuthUser>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  profileDepartments() {
+    return request<Department[]>('/auth/departments');
   },
 
   changePassword(matKhauCu: string, matKhauMoi: string) {

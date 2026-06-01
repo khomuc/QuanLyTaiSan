@@ -12,6 +12,7 @@ import type {
 } from 'mysql2/promise';
 import { MYSQL_CONNECTION } from '../common/constants';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ApprovalActionDto } from './dto/approval-action.dto';
 import { AssignApproversDto } from './dto/assign-approvers.dto';
 
@@ -23,7 +24,10 @@ interface PendingApprovalRow extends RowDataPacket {
 
 @Injectable()
 export class ApprovalsService {
-  constructor(@Inject(MYSQL_CONNECTION) private readonly db: Pool) {}
+  constructor(
+    @Inject(MYSQL_CONNECTION) private readonly db: Pool,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async findPendingForUser(user: AuthUser) {
     const [transferRows] = await this.db.execute<PendingApprovalRow[]>(
@@ -185,6 +189,7 @@ export class ApprovalsService {
     user: AuthUser,
   ) {
     const connection = await this.db.getConnection();
+    const approverIds = dto.approvers.map((approver) => approver.maNhanVien);
     try {
       await connection.beginTransaction();
 
@@ -218,6 +223,7 @@ export class ApprovalsService {
       }
 
       await connection.commit();
+      await this.sendApprovalReminderEmails(type, documentId, approverIds, user);
 
       return type === 'TRANSFER'
         ? this.findTransferApprovers(documentId)
@@ -227,6 +233,34 @@ export class ApprovalsService {
       throw error;
     } finally {
       connection.release();
+    }
+  }
+
+  private async sendApprovalReminderEmails(
+    type: WorkflowType,
+    documentId: string,
+    approverIds: string[],
+    user: AuthUser,
+  ) {
+    const results = await Promise.allSettled(
+      approverIds.map((maNhanVien) =>
+        this.notificationsService.sendApprovalReminder(
+          {
+            loaiPhieu: type,
+            maPhieu: documentId,
+            maNhanVien,
+          },
+          user,
+        ),
+      ),
+    );
+
+    const failed = results.filter((result) => result.status === 'rejected');
+    if (failed.length) {
+      // Approval assignment must not roll back when SMTP is temporarily down.
+      console.warn(
+        `Approval reminders failed for ${failed.length}/${approverIds.length} approvers`,
+      );
     }
   }
 

@@ -18,9 +18,16 @@ import type {
 export const demoUser: AuthUser = {
   maNhanVien: 'B2204960',
   hoTen: 'Nguyen Thi Huynh Nhu',
+  chucVu: 'System Lead',
   email: 'nhu.system@qlts.local',
+  soDienThoai: '0900000001',
+  maPhongBan: 'PB06',
+  tenPhongBan: 'Phong To chuc hanh chinh',
   maVaiTro: 'ADMIN',
+  tenVaiTro: 'Quan tri vien',
+  trangThai: 'ACTIVE',
   permissions: [
+    'ASSET_VIEW',
     'STAFF_VIEW',
     'STAFF_CREATE',
     'STAFF_EDIT',

@@ -28,6 +28,8 @@ interface EmployeeRow extends RowDataPacket {
   UpdatedAt: Date;
 }
 
+const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
+
 @Injectable()
 export class EmployeesService {
   constructor(@Inject(MYSQL_CONNECTION) private readonly db: Pool) {}
@@ -108,7 +110,7 @@ export class EmployeesService {
 
   async create(dto: CreateEmployeeDto, user: AuthUser) {
     await this.ensureUnique(dto.maNhanVien, dto.email);
-    const password = await bcrypt.hash(dto.matKhau, 10);
+    const password = await bcrypt.hash(dto.matKhau, BCRYPT_SALT_ROUNDS);
 
     await this.db.execute(
       `INSERT INTO NHAN_VIEN
@@ -154,7 +156,7 @@ export class EmployeesService {
 
     if (dto.matKhau) {
       assignments.push('MatKhau = ?');
-      params.push(await bcrypt.hash(dto.matKhau, 10));
+      params.push(await bcrypt.hash(dto.matKhau, BCRYPT_SALT_ROUNDS));
     }
 
     if (!assignments.length) {

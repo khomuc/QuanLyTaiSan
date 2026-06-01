@@ -2,6 +2,14 @@ import { Global, Module } from '@nestjs/common';
 import * as mysql from 'mysql2/promise';
 import { MYSQL_CONNECTION } from './common/constants';
 
+function getRequiredEnv(name: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required. Configure it in .env before start.`);
+  }
+  return value;
+}
+
 @Global()
 @Module({
   providers: [
@@ -10,10 +18,10 @@ import { MYSQL_CONNECTION } from './common/constants';
       useFactory: async () => {
         try {
           const pool = mysql.createPool({
-            host: process.env.DB_HOST ?? '34.44.235.59',
-            user: process.env.DB_USER ?? 'root',
-            password: process.env.DB_PASSWORD ?? 'Ct555_2026',
-            database: process.env.DB_NAME ?? 'quan_ly_tai_san_qr',
+            host: getRequiredEnv('DB_HOST'),
+            user: getRequiredEnv('DB_USER'),
+            password: getRequiredEnv('DB_PASSWORD'),
+            database: getRequiredEnv('DB_NAME'),
             waitForConnections: true,
             connectionLimit: Number(process.env.DB_CONNECTION_LIMIT ?? 10),
             ssl: {
