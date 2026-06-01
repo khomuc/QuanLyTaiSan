@@ -6,12 +6,12 @@
 
 | # | Nhiệm Vụ | Mô Tả | Trạng Thái | Người Đảm Nhiệm | Deadline |
 |---|----------|-------|-----------|-----------------|----------|
-| 1 | Frontend Refactoring | Tách App.tsx → DashboardPage, RolesPage, Sidebar... sử dụng React.lazy() | ✅ Hoàn thành | nnhhhoang | Tuần 10 |
-| 2 | Profile Update Form | Thêm form chỉnh sửa info (Phone, Department) + đổi mật khẩu | ✅ Hoàn thành | nnhhhoang | Tuần 9 |
-| 3 | Email Service | Cấu hình SMTP/Gmail/SendGrid, gửi auto reminder email | ⚠️ 85% | nnhhhoang | Tuần 10 |
-| 4 | Test Cases & RBAC | Viết test cases kiểm thử RBAC (role-based access) | ⚠️ Tạo tài liệu | nnhhhoang | Tuần 11 |
-| 5 | Security & Performance | Đánh giá Bcrypt, JWT, API response time | ⚠️ Tạo tài liệu | nnhhhoang | Tuần 11 |
-| 6 | CI/CD Pipeline | Thiết lập GitHub Actions workflow | ⚠️ Tạo workflow | nnhhhoang | Tuần 11 |
+| 1 | Frontend Refactoring | Tách App.tsx → DashboardPage, RolesPage, Sidebar... sử dụng React.lazy() | ✅ Hoàn thành | nnhuwz03 | Tuần 10 |
+| 2 | Profile Update Form | Thêm form chỉnh sửa info (Phone, Department) + đổi mật khẩu | ✅ Hoàn thành | nnhuwz03 | Tuần 9 |
+| 3 | Email Service | Cấu hình SMTP/Gmail/SendGrid, gửi auto reminder email | ⚠️ 85% | nnhuwz03 | Tuần 10 |
+| 4 | Test Cases & RBAC | Viết test cases kiểm thử RBAC (role-based access) | ⚠️ Tạo tài liệu | nnhuwz03 | Tuần 11 |
+| 5 | Security & Performance | Đánh giá Bcrypt, JWT, API response time | ⚠️ Tạo tài liệu | nnhuwz03 | Tuần 11 |
+| 6 | CI/CD Pipeline | Thiết lập GitHub Actions workflow | ⚠️ Tạo workflow | nnhuwz03 | Tuần 11 |
 
 ### Chi Tiết Từng Nhiệm Vụ
 
