@@ -3,8 +3,6 @@
 **Dự án:** Quản Lý Tài Sản QR (Asset Management System)  
 **Team Lead:** Nguyễn Thị Huỳnh Như — B2204960  
 **Repository:** https://github.com/khomuc/QuanLyTaiSan.git
-
-**Branch chính:** `test` (Development)  
 **Cập nhật lần cuối:** 2025-06-01
 
 ---
