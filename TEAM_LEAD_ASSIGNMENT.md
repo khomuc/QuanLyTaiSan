@@ -107,14 +107,5 @@ security-scan: npm audit + OWASP dependency check
 deploy-dev: Auto deploy khi push to test branch
 deploy-prod: Auto deploy khi push to main branch
 
-Frontend Refactoring     ████████████████████░ 90%
-Profile Update          ██████████████████████ 100%
-Email Service           █████████████████░░░░ 85%
-Test Cases              ████████░░░░░░░░░░░░░ 40% (Tài liệu tạo)
-Security Audit          ████████░░░░░░░░░░░░░ 40% (Tài liệu tạo)
-CI/CD Pipeline          ████████░░░░░░░░░░░░░ 40% (Workflow tạo)
-────────────────────────────────
-Overall:                ██████████░░░░░░░░░░░ 55%
-
 Cập nhật lần cuối: 2025-06-01 | Người cập nhật: nnhuwz03
 
