@@ -12,4 +12,13 @@ export class UpdateProfileDto {
     message: 'So dien thoai khong hop le',
   })
   soDienThoai?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  chucVu?: string | null;
+
+  @IsString()
+  @MaxLength(50)
+  maPhongBan: string;
 }

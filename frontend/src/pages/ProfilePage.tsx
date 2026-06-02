@@ -17,6 +17,8 @@ export default function ProfilePage({
   const [profileDraft, setProfileDraft] = useState<ProfileUpdatePayload>({
     hoTen: user.hoTen,
     soDienThoai: user.soDienThoai ?? '',
+    chucVu: user.chucVu ?? null,
+    maPhongBan: user.maPhongBan ?? '',
   });
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -30,6 +32,8 @@ export default function ProfilePage({
     setProfileDraft({
       hoTen: user.hoTen,
       soDienThoai: user.soDienThoai ?? '',
+      chucVu: user.chucVu ?? null,
+      maPhongBan: user.maPhongBan ?? '',
     });
     setHasChanges(false);
   }, [user]);
