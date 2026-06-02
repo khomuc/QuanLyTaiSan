@@ -1,5 +1,6 @@
 import { Menu, X, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import type { AuthUser } from '../lib/types';
+import { useState } from 'react';
 
 export interface NavItem {
   key: string;
@@ -28,6 +29,27 @@ export function Sidebar({
   onToggleSidebar,
   onToggleCollapse,
 }: SidebarProps) {
+  const [tooltipLabel, setTooltipLabel] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+
+  const handleNavItemHover = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    label: string
+  ) => {
+    if (isCollapsed) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setTooltipLabel(label);
+      setTooltipPosition({
+        top: rect.top + rect.height / 2,
+        left: rect.right + 12,
+      });
+    }
+  };
+
+  const handleNavItemLeave = () => {
+    setTooltipLabel(null);
+  };
+
   return (
     <>
       {isOpen && (
@@ -91,6 +113,8 @@ export function Sidebar({
                   onNavigate(item.key);
                   onToggleSidebar(false);
                 }}
+                onMouseEnter={(e) => handleNavItemHover(e, item.label)}
+                onMouseLeave={handleNavItemLeave}
                 title={item.label}
                 type="button"
               >
@@ -101,6 +125,18 @@ export function Sidebar({
           })}
         </nav>
       </aside>
+
+      {tooltipLabel && isCollapsed && (
+        <div
+          className="sidebar-tooltip"
+          style={{
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+          }}
+        >
+          {tooltipLabel}
+        </div>
+      )}
     </>
   );
 }
