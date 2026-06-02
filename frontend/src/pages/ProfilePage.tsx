@@ -16,9 +16,7 @@ export default function ProfilePage({
 }) {
   const [profileDraft, setProfileDraft] = useState<ProfileUpdatePayload>({
     hoTen: user.hoTen,
-    chucVu: user.chucVu ?? '',
     soDienThoai: user.soDienThoai ?? '',
-    maPhongBan: user.maPhongBan ?? departments[0]?.maPhongBan ?? '',
   });
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,19 +29,15 @@ export default function ProfilePage({
   useEffect(() => {
     setProfileDraft({
       hoTen: user.hoTen,
-      chucVu: user.chucVu ?? '',
       soDienThoai: user.soDienThoai ?? '',
-      maPhongBan: user.maPhongBan ?? departments[0]?.maPhongBan ?? '',
     });
     setHasChanges(false);
-  }, [departments, user]);
+  }, [user]);
 
   const detectChanges = () => {
     setHasChanges(
       profileDraft.hoTen !== user.hoTen ||
-        profileDraft.chucVu !== (user.chucVu ?? '') ||
-        profileDraft.soDienThoai !== (user.soDienThoai ?? '') ||
-        profileDraft.maPhongBan !== user.maPhongBan
+        profileDraft.soDienThoai !== (user.soDienThoai ?? '')
     );
   };
 
@@ -53,7 +47,6 @@ export default function ProfilePage({
     try {
       await onSaveProfile({
         ...profileDraft,
-        chucVu: profileDraft.chucVu || null,
         soDienThoai: profileDraft.soDienThoai || null,
       });
       setHasChanges(false);
@@ -107,23 +100,23 @@ export default function ProfilePage({
               value={profileDraft.hoTen}
             />
           </label>
+
           <label>
             Email dang nhap
-            <input readOnly value={user.email} />
+            <input readOnly disabled value={user.email} />
+            <small style={{ color: '#888', fontSize: '0.85em' }}>
+              De bao mat, email khong the thay doi. Lien he Admin de cap nhat.
+            </small>
           </label>
+
           <label>
             Chuc vu
-            <input
-              onChange={(event) => {
-                setProfileDraft({
-                  ...profileDraft,
-                  chucVu: event.target.value,
-                });
-                detectChanges();
-              }}
-              value={profileDraft.chucVu ?? ''}
-            />
+            <input readOnly disabled value={user.chucVu || 'Chua gan'} />
+            <small style={{ color: '#888', fontSize: '0.85em' }}>
+              Chuc vu do to chuc gan. Lien he Admin de cap nhat.
+            </small>
           </label>
+
           <label>
             So dien thoai
             <input
@@ -135,31 +128,18 @@ export default function ProfilePage({
                 detectChanges();
               }}
               value={profileDraft.soDienThoai ?? ''}
+              placeholder="012345678"
             />
           </label>
+
           <label>
             Phong ban
-            <select
-              onChange={(event) => {
-                setProfileDraft({
-                  ...profileDraft,
-                  maPhongBan: event.target.value,
-                });
-                detectChanges();
-              }}
-              required
-              value={profileDraft.maPhongBan}
-            >
-              {departments.map((department) => (
-                <option
-                  key={department.maPhongBan}
-                  value={department.maPhongBan}
-                >
-                  {department.tenPhongBan}
-                </option>
-              ))}
-            </select>
+            <input readOnly disabled value={user.tenPhongBan || user.maPhongBan || 'Chua gan'} />
+            <small style={{ color: '#888', fontSize: '0.85em' }}>
+              Phong ban do to chuc gan. Lien he Admin de cap nhat.
+            </small>
           </label>
+
           <button
             className="primary-button"
             disabled={savingProfile || !hasChanges}
@@ -186,11 +166,8 @@ export default function ProfilePage({
                 value={oldPassword}
               />
               <button
-                aria-label={
-                  showOldPassword ? 'An mat khau cu' : 'Hien mat khau cu'
-                }
+                aria-label={showOldPassword ? 'An mat khau cu' : 'Hien mat khau cu'}
                 onClick={() => setShowOldPassword((current) => !current)}
-                title={showOldPassword ? 'An mat khau cu' : 'Hien mat khau cu'}
                 type="button"
               >
                 {showOldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -208,24 +185,15 @@ export default function ProfilePage({
                 value={newPassword}
               />
               <button
-                aria-label={
-                  showNewPassword ? 'An mat khau moi' : 'Hien mat khau moi'
-                }
+                aria-label={showNewPassword ? 'An mat khau moi' : 'Hien mat khau moi'}
                 onClick={() => setShowNewPassword((current) => !current)}
-                title={
-                  showNewPassword ? 'An mat khau moi' : 'Hien mat khau moi'
-                }
                 type="button"
               >
                 {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </label>
-          <button
-            className="primary-button"
-            disabled={savingPassword}
-            type="submit"
-          >
+          <button className="primary-button" disabled={savingPassword} type="submit">
             <Save size={18} />
             Cap nhat mat khau
           </button>
