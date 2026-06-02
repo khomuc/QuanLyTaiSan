@@ -37,12 +37,23 @@ export function AppLayout({
       }
     }
 
+    // Close sidebar on window resize (desktop view)
+    function handleResize() {
+      if (window.innerWidth > 768 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    }
+
     window.addEventListener('keydown', closeSidebarWithEscape);
-    return () => window.removeEventListener('keydown', closeSidebarWithEscape);
-  }, []);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('keydown', closeSidebarWithEscape);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [sidebarOpen]);
 
   return (
-    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${sidebarOpen ? 'sidebar-open-mobile' : ''}`}>
       <Sidebar
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}
