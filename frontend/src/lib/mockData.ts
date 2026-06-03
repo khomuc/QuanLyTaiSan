@@ -3,6 +3,7 @@ import type {
   Asset,
   AssetCategory,
   AssetList,
+  AssetReport,
   AuditLogList,
   AuthUser,
   DashboardOverview,
@@ -86,6 +87,64 @@ export const assets: Asset[] = [
 export const assetList: AssetList = {
   data: assets,
   meta: { page: 1, limit: 20, total: assets.length, totalPages: 1 },
+};
+
+export const assetReport: AssetReport = {
+  summary: {
+    totalAssets: assets.length,
+    activeAssets: assets.filter((asset) => asset.trangThai !== 'HONG').length,
+    liquidatedAssets: assets.filter((asset) => asset.trangThai === 'HONG').length,
+    totalOriginalValue: assets.reduce((sum, asset) => sum + asset.nguyenGia, 0),
+    totalDepreciationValue: assets.reduce(
+      (sum, asset) => sum + asset.haoMonLuyKe,
+      0,
+    ),
+    totalRemainingValue: assets.reduce(
+      (sum, asset) => sum + asset.giaTriConLai,
+      0,
+    ),
+  },
+  byCategory: [
+    {
+      id: 'LT001',
+      name: 'Thiet bi van phong',
+      total: 1,
+      originalValue: 32000000,
+      remainingValue: 24000000,
+    },
+    {
+      id: 'LT003',
+      name: 'Thiet bi hoc tap',
+      total: 1,
+      originalValue: 15000000,
+      remainingValue: 12000000,
+    },
+  ],
+  byDepartment: [
+    {
+      id: 'PB01',
+      name: 'Ban Giam hieu',
+      total: 1,
+      originalValue: 32000000,
+      remainingValue: 24000000,
+    },
+    {
+      id: 'PB02',
+      name: 'Khoa Ly luan co so',
+      total: 1,
+      originalValue: 15000000,
+      remainingValue: 12000000,
+    },
+  ],
+  byStatus: [
+    {
+      id: 'HOAT_DONG',
+      name: 'HOAT_DONG',
+      total: 2,
+      originalValue: 47000000,
+      remainingValue: 36000000,
+    },
+  ],
 };
 
 export const employees: Employee[] = [

@@ -1,6 +1,7 @@
 export type ViewKey =
   | 'dashboard'
   | 'assets'
+  | 'assetReport'
   | 'employees'
   | 'roles'
   | 'approvals'
@@ -88,6 +89,28 @@ export interface AssetCategory {
   maLoai: string;
   tenLoai: string;
   moTa: string | null;
+}
+
+export interface AssetReport {
+  summary: {
+    totalAssets: number;
+    activeAssets: number;
+    liquidatedAssets: number;
+    totalOriginalValue: number;
+    totalDepreciationValue: number;
+    totalRemainingValue: number;
+  };
+  byCategory: AssetReportGroup[];
+  byDepartment: AssetReportGroup[];
+  byStatus: AssetReportGroup[];
+}
+
+export interface AssetReportGroup {
+  id: string;
+  name: string;
+  total: number;
+  originalValue: number;
+  remainingValue: number;
 }
 
 export interface Role {

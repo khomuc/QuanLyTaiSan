@@ -29,13 +29,15 @@ import {
   X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { api, clearStoredToken, getStoredToken, setStoredToken } from './lib/api';
 import * as demo from './lib/mockData';
 import type {
   ApprovalItem,
   Asset,
   AssetCategory,
+  AssetReport,
+  AssetReportGroup,
   AuditLog,
   AuthUser,
   DashboardOverview,
@@ -59,6 +61,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { key: 'dashboard', label: 'Tong quan', icon: LayoutDashboard },
   { key: 'assets', label: 'Tai san', icon: PackageSearch },
+  { key: 'assetReport', label: 'Bao cao tai san', icon: BarChart3 },
   { key: 'employees', label: 'Nhan vien', icon: Users },
   { key: 'roles', label: 'Vai tro & quyen', icon: ShieldCheck },
   { key: 'approvals', label: 'Ky duyet', icon: ClipboardCheck },
@@ -80,6 +83,33 @@ interface EmployeeForm {
   trangThai: Employee['trangThai'];
 }
 
+interface AssetForm {
+  maTaiSan: string;
+  maQR: string;
+  tenTaiSan: string;
+  serial: string;
+  model: string;
+  maLoai: string;
+  nguyenGia: string;
+  haoMonLuyKe: string;
+  giaTriConLai: string;
+  ngayNhap: string;
+  maPhongBanHienTai: string;
+  trangThai: Asset['trangThai'];
+  soHieuTSCD: string;
+  ghiChu: string;
+}
+
+interface AssetHistoryItem {
+  maLog: number;
+  maNhanVien: string | null;
+  hoTen: string | null;
+  thoiGian: string;
+  hanhDong: string;
+  trangThai: string | null;
+  chiTiet: string | null;
+}
+
 const emptyEmployee: EmployeeForm = {
   maNhanVien: '',
   hoTen: '',
@@ -90,6 +120,23 @@ const emptyEmployee: EmployeeForm = {
   maVaiTro: 'NHAN_VIEN',
   matKhau: '123456',
   trangThai: 'ACTIVE',
+};
+
+const emptyAsset: AssetForm = {
+  maTaiSan: '',
+  maQR: '',
+  tenTaiSan: '',
+  serial: '',
+  model: '',
+  maLoai: '',
+  nguyenGia: '0',
+  haoMonLuyKe: '0',
+  giaTriConLai: '',
+  ngayNhap: new Date().toISOString().slice(0, 10),
+  maPhongBanHienTai: '',
+  trangThai: 'HOAT_DONG',
+  soHieuTSCD: '',
+  ghiChu: '',
 };
 
 function App() {
@@ -104,6 +151,9 @@ function App() {
 
   const [dashboard, setDashboard] = useState<DashboardOverview>(demo.dashboard);
   const [assets, setAssets] = useState<Asset[]>(demo.assets);
+  const [assetReport, setAssetReport] = useState<AssetReport>(
+    demo.assetReport,
+  );
   const [assetCategories, setAssetCategories] = useState<AssetCategory[]>(
     demo.assetCategories,
   );
@@ -127,6 +177,11 @@ function App() {
   const [employeeModal, setEmployeeModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
   const [employeeForm, setEmployeeForm] = useState(emptyEmployee);
+  const [assetModal, setAssetModal] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<string | null>(null);
+  const [assetForm, setAssetForm] = useState(emptyAsset);
+  const [assetDetail, setAssetDetail] = useState<Asset | null>(null);
+  const [assetHistory, setAssetHistory] = useState<AssetHistoryItem[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState('ADMIN');
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>(
     demo.roles[0].permissions,
@@ -224,6 +279,22 @@ function App() {
         setDepartments(departmentList);
       }
 
+      if (nextView === 'assetReport') {
+        const [report, categoryList, departmentList] = await Promise.all([
+          api.assetReport({
+            search: assetSearch,
+            maLoai: assetCategory,
+            maPhongBan: assetDepartment,
+            trangThai: assetStatus,
+          }),
+          api.assetCategories(),
+          api.departments(),
+        ]);
+        setAssetReport(report);
+        setAssetCategories(categoryList);
+        setDepartments(departmentList);
+      }
+
       if (nextView === 'employees') {
         const [employeeList, departmentList, roleList] = await Promise.all([
           api.employees(employeeSearch),
@@ -281,6 +352,11 @@ function App() {
       setAssetCategories(demo.assetCategories);
       setDepartments(demo.departments);
     }
+    if (nextView === 'assetReport') {
+      setAssetReport(demo.assetReport);
+      setAssetCategories(demo.assetCategories);
+      setDepartments(demo.departments);
+    }
     if (nextView === 'employees') {
       setEmployees(demo.employees);
       setDepartments(demo.departments);
@@ -308,6 +384,167 @@ function App() {
     setToken(null);
     setUser(null);
     setApiMode('api');
+  }
+
+  function openCreateAsset() {
+    setEditingAsset(null);
+    setAssetForm({
+      ...emptyAsset,
+      maLoai: assetCategories[0]?.maLoai ?? '',
+      maPhongBanHienTai: departments[0]?.maPhongBan ?? '',
+    });
+    setAssetModal(true);
+  }
+
+  function openEditAsset(asset: Asset) {
+    setEditingAsset(asset.maTaiSan);
+    setAssetForm({
+      maTaiSan: asset.maTaiSan,
+      maQR: asset.maQR ?? '',
+      tenTaiSan: asset.tenTaiSan,
+      serial: asset.serial ?? '',
+      model: asset.model ?? '',
+      maLoai: asset.maLoai,
+      nguyenGia: String(asset.nguyenGia),
+      haoMonLuyKe: String(toDepreciationPercent(asset)),
+      giaTriConLai: String(asset.giaTriConLai),
+      ngayNhap: String(asset.ngayNhap).slice(0, 10),
+      maPhongBanHienTai: asset.maPhongBanHienTai,
+      trangThai: asset.trangThai,
+      soHieuTSCD: asset.soHieuTSCD ?? '',
+      ghiChu: asset.ghiChu ?? '',
+    });
+    setAssetModal(true);
+  }
+
+  async function openAssetDetail(asset: Asset) {
+    setAssetDetail(asset);
+    try {
+      setAssetHistory(await api.assetHistory(asset.maTaiSan));
+    } catch {
+      setAssetHistory([]);
+      setToast('Chua tai duoc lich su thay doi');
+    }
+  }
+
+  function buildAssetPayload() {
+    const nguyenGia = Number(assetForm.nguyenGia || 0);
+    const haoMonPercent = Math.min(
+      100,
+      Math.max(0, Number(assetForm.haoMonLuyKe || 0)),
+    );
+    const haoMonLuyKe = Math.round((nguyenGia * haoMonPercent) / 100);
+
+    return {
+      maTaiSan: assetForm.maTaiSan.trim(),
+      maQR: assetForm.maQR || undefined,
+      tenTaiSan: assetForm.tenTaiSan.trim(),
+      serial: assetForm.serial || undefined,
+      model: assetForm.model || undefined,
+      maLoai: assetForm.maLoai,
+      nguyenGia,
+      haoMonLuyKe,
+      giaTriConLai: Math.max(0, nguyenGia - haoMonLuyKe),
+      ngayNhap: assetForm.ngayNhap,
+      maPhongBanHienTai: assetForm.maPhongBanHienTai,
+      trangThai: assetForm.trangThai,
+      soHieuTSCD: assetForm.soHieuTSCD || undefined,
+      ghiChu: assetForm.ghiChu || undefined,
+    };
+  }
+
+  async function saveAsset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const payload = buildAssetPayload();
+
+    try {
+      if (editingAsset) {
+        const { maTaiSan: _maTaiSan, ...updatePayload } = payload;
+        const updated = await api.updateAsset(editingAsset, updatePayload);
+        setAssets((current) =>
+          current.map((asset) =>
+            asset.maTaiSan === editingAsset ? updated : asset,
+          ),
+        );
+      } else {
+        const created = await api.createAsset(payload);
+        setAssets((current) => [created, ...current]);
+      }
+      setToast('Da luu tai san');
+      setAssetModal(false);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : 'Chua luu duoc tai san');
+    }
+  }
+
+  async function deleteAsset(maTaiSan: string) {
+    try {
+      await api.deleteAsset(maTaiSan);
+      setToast('Da dua tai san vao muc thanh ly');
+      setAssets((current) =>
+        current.map((asset) =>
+          asset.maTaiSan === maTaiSan ? { ...asset, trangThai: 'HONG' } : asset,
+        ),
+      );
+    } catch {
+      setToast('Chua dua duoc tai san vao muc thanh ly');
+    }
+  }
+
+  async function finalizeAsset(maTaiSan: string) {
+    try {
+      await api.finalizeAsset(maTaiSan);
+      setToast('Da xoa tai san sau khi thanh ly');
+      setAssets((current) =>
+        current.filter((asset) => asset.maTaiSan !== maTaiSan),
+      );
+    } catch {
+      setToast('Chua xoa duoc tai san sau thanh ly');
+    }
+  }
+
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadAssetTemplate() {
+    try {
+      const blob = await api.assetImportTemplate();
+      downloadBlob(blob, 'mau-import-tai-san.xlsx');
+      setToast('Da tai file mau');
+    } catch {
+      setToast('Khong tai duoc file mau');
+    }
+  }
+
+  async function exportAssetsExcel() {
+    try {
+      const blob = await api.exportAssets({
+        search: assetSearch,
+        maLoai: assetCategory,
+        maPhongBan: assetDepartment,
+        trangThai: assetStatus,
+      });
+      downloadBlob(blob, 'danh-sach-tai-san.xlsx');
+      setToast('Da export danh sach tai san');
+    } catch {
+      setToast('Khong export duoc Excel');
+    }
+  }
+
+  async function importAssetsExcel(file: File) {
+    try {
+      const result = await api.importAssets(file);
+      setToast(`Import thanh cong ${result.success}, loi ${result.failed}`);
+      await loadView('assets');
+    } catch {
+      setToast('Khong import duoc Excel');
+    }
   }
 
   function openCreateEmployee() {
@@ -606,7 +843,31 @@ function App() {
               onStatus={setAssetStatus}
               onCategory={setAssetCategory}
               onDepartment={setAssetDepartment}
+              onCreate={openCreateAsset}
+              onView={openAssetDetail}
+              onEdit={openEditAsset}
+              onDelete={(maTaiSan) => void deleteAsset(maTaiSan)}
+              onFinalize={(maTaiSan) => void finalizeAsset(maTaiSan)}
+              onDownloadTemplate={() => void downloadAssetTemplate()}
+              onExport={() => void exportAssetsExcel()}
+              onImport={(file) => void importAssetsExcel(file)}
               onRefresh={() => void loadView('assets')}
+            />
+          )}
+          {view === 'assetReport' && (
+            <AssetReportPage
+              report={assetReport}
+              categories={assetCategories}
+              departments={departments}
+              search={assetSearch}
+              status={assetStatus}
+              category={assetCategory}
+              department={assetDepartment}
+              onSearch={setAssetSearch}
+              onStatus={setAssetStatus}
+              onCategory={setAssetCategory}
+              onDepartment={setAssetDepartment}
+              onRefresh={() => void loadView('assetReport')}
             />
           )}
           {view === 'employees' && (
@@ -672,6 +933,33 @@ function App() {
           onChange={setEmployeeForm}
           onClose={() => setEmployeeModal(false)}
           onSubmit={saveEmployee}
+        />
+      )}
+
+      {assetModal && (
+        <AssetModal
+          form={assetForm}
+          categories={assetCategories}
+          departments={departments}
+          isEditing={Boolean(editingAsset)}
+          onChange={setAssetForm}
+          onClose={() => setAssetModal(false)}
+          onSubmit={saveAsset}
+        />
+      )}
+
+      {assetDetail && (
+        <AssetDetailModal
+          asset={assetDetail}
+          history={assetHistory}
+          onClose={() => {
+            setAssetDetail(null);
+            setAssetHistory([]);
+          }}
+          onEdit={() => {
+            openEditAsset(assetDetail);
+            setAssetDetail(null);
+          }}
         />
       )}
 
@@ -865,6 +1153,171 @@ function KpiTile({
   );
 }
 
+function AssetReportPage({
+  report,
+  categories,
+  departments,
+  search,
+  status,
+  category,
+  department,
+  onSearch,
+  onStatus,
+  onCategory,
+  onDepartment,
+  onRefresh,
+}: {
+  report: AssetReport;
+  categories: AssetCategory[];
+  departments: Department[];
+  search: string;
+  status: string;
+  category: string;
+  department: string;
+  onSearch: (value: string) => void;
+  onStatus: (value: string) => void;
+  onCategory: (value: string) => void;
+  onDepartment: (value: string) => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="assets-layout">
+      <section className="asset-toolbar panel">
+        <div className="search-box">
+          <Search size={18} />
+          <input
+            onChange={(event) => onSearch(event.target.value)}
+            placeholder="Loc bao cao theo ma, QR, ten, serial"
+            value={search}
+          />
+        </div>
+        <select
+          aria-label="Loc loai tai san"
+          onChange={(event) => onCategory(event.target.value)}
+          value={category}
+        >
+          <option value="">Tat ca loai</option>
+          {categories.map((item) => (
+            <option key={item.maLoai} value={item.maLoai}>
+              {item.tenLoai}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Loc phong ban"
+          onChange={(event) => onDepartment(event.target.value)}
+          value={department}
+        >
+          <option value="">Tat ca phong ban</option>
+          {departments.map((item) => (
+            <option key={item.maPhongBan} value={item.maPhongBan}>
+              {item.tenPhongBan}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Loc trang thai"
+          onChange={(event) => onStatus(event.target.value)}
+          value={status}
+        >
+          <option value="">Tat ca trang thai</option>
+          <option value="HOAT_DONG">Hoat dong</option>
+          <option value="BAO_TRI">Bao tri</option>
+          <option value="HONG">Thanh ly</option>
+        </select>
+        <button className="primary-button" onClick={onRefresh} type="button">
+          <Filter size={18} />
+          Ap dung
+        </button>
+      </section>
+
+      <div className="report-summary">
+        <ReportMetric label="Tong tai san" value={report.summary.totalAssets} />
+        <ReportMetric label="Dang su dung" value={report.summary.activeAssets} />
+        <ReportMetric label="Thanh ly" value={report.summary.liquidatedAssets} />
+        <ReportMetric
+          label="Tong nguyen gia"
+          value={formatCurrencyShort(report.summary.totalOriginalValue)}
+        />
+        <ReportMetric
+          label="Tong hao mon"
+          value={formatCurrencyShort(report.summary.totalDepreciationValue)}
+        />
+        <ReportMetric
+          label="Gia tri con lai"
+          value={formatCurrencyShort(report.summary.totalRemainingValue)}
+        />
+      </div>
+
+      <div className="report-grid">
+        <ReportGroupPanel
+          groups={report.byCategory}
+          title="Thong ke theo loai tai san"
+        />
+        <ReportGroupPanel
+          groups={report.byDepartment}
+          title="Thong ke theo phong ban"
+        />
+        <ReportGroupPanel groups={report.byStatus} title="Thong ke theo trang thai" />
+      </div>
+    </div>
+  );
+}
+
+function ReportMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <section className="report-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </section>
+  );
+}
+
+function ReportGroupPanel({
+  title,
+  groups,
+}: {
+  title: string;
+  groups: AssetReportGroup[];
+}) {
+  const maxTotal = Math.max(...groups.map((group) => group.total), 1);
+
+  return (
+    <section className="panel report-panel">
+      <div className="panel-header">
+        <h2>{title}</h2>
+      </div>
+      <div className="report-bars">
+        {groups.map((group) => (
+          <div className="report-bar-row" key={`${title}-${group.id}`}>
+            <div className="report-bar-head">
+              <strong>{group.name}</strong>
+              <span>{group.total} tai san</span>
+            </div>
+            <div className="report-bar-track">
+              <div
+                className="report-bar-fill"
+                style={{ width: `${Math.max(8, (group.total / maxTotal) * 100)}%` }}
+              />
+            </div>
+            <div className="report-bar-values">
+              <span>Nguyen gia: {formatCurrency(group.originalValue)}</span>
+              <span>Con lai: {formatCurrency(group.remainingValue)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {!groups.length && <EmptyState text="Khong co du lieu bao cao" />}
+    </section>
+  );
+}
+
 function AssetsPage({
   assets,
   categories,
@@ -877,6 +1330,14 @@ function AssetsPage({
   onStatus,
   onCategory,
   onDepartment,
+  onCreate,
+  onView,
+  onEdit,
+  onDelete,
+  onFinalize,
+  onDownloadTemplate,
+  onExport,
+  onImport,
   onRefresh,
 }: {
   assets: Asset[];
@@ -890,9 +1351,31 @@ function AssetsPage({
   onStatus: (value: string) => void;
   onCategory: (value: string) => void;
   onDepartment: (value: string) => void;
+  onCreate: () => void;
+  onView: (asset: Asset) => void;
+  onEdit: (asset: Asset) => void;
+  onDelete: (maTaiSan: string) => void;
+  onFinalize: (maTaiSan: string) => void;
+  onDownloadTemplate: () => void;
+  onExport: () => void;
+  onImport: (file: File) => void;
   onRefresh: () => void;
 }) {
-  const totalValue = assets.reduce((sum, asset) => sum + asset.giaTriConLai, 0);
+  const activeAssets = assets.filter((asset) => asset.trangThai !== 'HONG');
+  const liquidatedAssets = assets.filter((asset) => asset.trangThai === 'HONG');
+  const visibleActiveAssets = activeAssets;
+  const totalValue = activeAssets.reduce(
+    (sum, asset) => sum + asset.giaTriConLai,
+    0,
+  );
+
+  function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) {
+      onImport(file);
+      event.target.value = '';
+    }
+  }
 
   return (
     <div className="assets-layout">
@@ -943,6 +1426,24 @@ function AssetsPage({
           <Filter size={18} />
           Ap dung
         </button>
+        <button className="primary-button" onClick={onCreate} type="button">
+          <Plus size={18} />
+          Them tai san
+        </button>
+        <button
+          className="secondary-button"
+          onClick={onDownloadTemplate}
+          type="button"
+        >
+          Tai mau Excel
+        </button>
+        <label className="secondary-button file-button">
+          Import Excel
+          <input accept=".xlsx" onChange={handleImport} type="file" />
+        </label>
+        <button className="secondary-button" onClick={onExport} type="button">
+          Export Excel
+        </button>
       </section>
 
       <div className="asset-summary">
@@ -950,13 +1451,13 @@ function AssetsPage({
           icon={PackageSearch}
           label="Tai san dang xem"
           tone="green"
-          value={assets.length}
+          value={activeAssets.length}
         />
         <KpiTile
           icon={QrCode}
           label="Co ma QR"
           tone="amber"
-          value={assets.filter((asset) => Boolean(asset.maQR)).length}
+          value={activeAssets.filter((asset) => Boolean(asset.maQR)).length}
         />
         <section className="kpi-tile red">
           <div className="kpi-icon">
@@ -970,9 +1471,15 @@ function AssetsPage({
       <section className="panel full">
         <div className="panel-header">
           <h2>Danh muc tai san</h2>
-          <button className="icon-button" onClick={onRefresh} title="Tai lai">
-            <RefreshCw size={18} />
-          </button>
+          <div className="button-row">
+            <button className="icon-button" onClick={onRefresh} title="Tai lai">
+              <RefreshCw size={18} />
+            </button>
+            <button className="primary-button" onClick={onCreate} type="button">
+              <Plus size={18} />
+              Them
+            </button>
+          </div>
         </div>
         <div className="table-wrap">
           <table>
@@ -982,12 +1489,15 @@ function AssetsPage({
                 <th>Ten tai san</th>
                 <th>Loai</th>
                 <th>Phong ban</th>
+                <th>Nguyen gia</th>
+                <th>Hao mon</th>
                 <th>Gia tri con lai</th>
                 <th>Trang thai</th>
+                <th>Thao tac</th>
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset) => (
+              {visibleActiveAssets.map((asset) => (
                 <tr key={asset.maTaiSan}>
                   <td>
                     <strong>{asset.maTaiSan}</strong>
@@ -999,16 +1509,102 @@ function AssetsPage({
                   </td>
                   <td>{asset.tenLoai ?? asset.maLoai}</td>
                   <td>{asset.tenPhongBan ?? asset.maPhongBanHienTai}</td>
+                  <td>{formatCurrency(asset.nguyenGia)}</td>
+                  <td>{toDepreciationPercent(asset)}%</td>
                   <td>{formatCurrency(asset.giaTriConLai)}</td>
                   <td>
                     <StatusPill value={asset.trangThai} />
+                  </td>
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        className="icon-button"
+                        onClick={() => onView(asset)}
+                        title="Xem chi tiet"
+                        type="button"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className="icon-button"
+                        onClick={() => onEdit(asset)}
+                        title="Sua tai san"
+                        type="button"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        className="icon-button danger"
+                        onClick={() => onDelete(asset.maTaiSan)}
+                        title="Dua vao muc thanh ly"
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!assets.length && <EmptyState text="Khong tim thay tai san phu hop" />}
+        {!visibleActiveAssets.length && (
+          <EmptyState text="Khong tim thay tai san phu hop" />
+        )}
+      </section>
+
+      <section className="panel full">
+        <div className="panel-header">
+          <h2>Tai san thanh ly</h2>
+          <span className="mode-pill demo">{liquidatedAssets.length}</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ma / QR</th>
+                <th>Ten tai san</th>
+                <th>Loai</th>
+                <th>Phong ban</th>
+                <th>Nguyen gia</th>
+                <th>Hao mon</th>
+                <th>Gia tri con lai</th>
+                <th>Thao tac</th>
+              </tr>
+            </thead>
+            <tbody>
+              {liquidatedAssets.map((asset) => (
+                <tr key={asset.maTaiSan}>
+                  <td>
+                    <strong>{asset.maTaiSan}</strong>
+                    <span>{asset.maQR ?? asset.soHieuTSCD ?? 'Chua gan QR'}</span>
+                  </td>
+                  <td>
+                    <strong>{asset.tenTaiSan}</strong>
+                    <span>{[asset.model, asset.serial].filter(Boolean).join(' - ')}</span>
+                  </td>
+                  <td>{asset.tenLoai ?? asset.maLoai}</td>
+                  <td>{asset.tenPhongBan ?? asset.maPhongBanHienTai}</td>
+                  <td>{formatCurrency(asset.nguyenGia)}</td>
+                  <td>{toDepreciationPercent(asset)}%</td>
+                  <td>{formatCurrency(asset.giaTriConLai)}</td>
+                  <td>
+                    <button
+                      className="secondary-button danger-text"
+                      onClick={() => onFinalize(asset.maTaiSan)}
+                      type="button"
+                    >
+                      Da ban / Xoa
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {!liquidatedAssets.length && (
+          <EmptyState text="Chua co tai san nao trong muc thanh ly" />
+        )}
       </section>
     </div>
   );
@@ -1104,6 +1700,321 @@ function EmployeesPage({
         </table>
       </div>
     </section>
+  );
+}
+
+function AssetDetailModal({
+  asset,
+  history,
+  onClose,
+  onEdit,
+}: {
+  asset: Asset;
+  history: AssetHistoryItem[];
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const qrValue = asset.maQR ?? asset.maTaiSan;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrValue)}`;
+
+  return (
+    <div className="modal-backdrop">
+      <section className="modal asset-detail-modal">
+        <div className="panel-header">
+          <div>
+            <h2>Chi tiet tai san</h2>
+            <p className="muted-text">{asset.maTaiSan}</p>
+          </div>
+          <button
+            className="icon-button"
+            onClick={onClose}
+            title="Dong"
+            type="button"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="detail-grid">
+          <div className="detail-main">
+            <DetailRow label="Ten tai san" value={asset.tenTaiSan} />
+            <DetailRow label="Loai" value={asset.tenLoai ?? asset.maLoai} />
+            <DetailRow
+              label="Phong ban"
+              value={asset.tenPhongBan ?? asset.maPhongBanHienTai}
+            />
+            <DetailRow label="Ma QR" value={asset.maQR ?? 'Chua gan QR'} />
+            <DetailRow label="Serial" value={asset.serial ?? 'Chua cap nhat'} />
+            <DetailRow label="Model" value={asset.model ?? 'Chua cap nhat'} />
+            <DetailRow label="So hieu TSCD" value={asset.soHieuTSCD ?? 'Chua cap nhat'} />
+            <DetailRow label="Ngay nhap" value={formatDate(asset.ngayNhap)} />
+            <DetailRow label="Nguyen gia" value={formatCurrency(asset.nguyenGia)} />
+            <DetailRow label="Hao mon" value={`${toDepreciationPercent(asset)}%`} />
+            <DetailRow
+              label="Gia tri con lai"
+              value={formatCurrency(asset.giaTriConLai)}
+            />
+            <DetailRow label="Trang thai" value={asset.trangThai} />
+            <DetailRow label="Ghi chu" value={asset.ghiChu ?? 'Khong co'} />
+          </div>
+
+          <aside className="qr-panel">
+            <img alt={`QR ${asset.maTaiSan}`} src={qrUrl} />
+            <strong>{qrValue}</strong>
+          </aside>
+        </div>
+
+        <section className="history-panel">
+          <div className="panel-header compact">
+            <h3>Lich su thay doi</h3>
+          </div>
+          <div className="compact-list">
+            {history.map((item) => (
+              <div className="compact-item" key={item.maLog}>
+                <strong>{item.hanhDong}</strong>
+                <span>
+                  {formatDate(item.thoiGian)} - {item.hoTen ?? item.maNhanVien ?? 'He thong'}
+                </span>
+              </div>
+            ))}
+          </div>
+          {!history.length && <EmptyState text="Chua co lich su thay doi" />}
+        </section>
+
+        <div className="modal-actions">
+          <button className="secondary-button" onClick={onClose} type="button">
+            Dong
+          </button>
+          <button className="primary-button" onClick={onEdit} type="button">
+            <Edit3 size={18} />
+            Sua tai san
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="detail-row">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function AssetModal({
+  form,
+  categories,
+  departments,
+  isEditing,
+  onChange,
+  onClose,
+  onSubmit,
+}: {
+  form: AssetForm;
+  categories: AssetCategory[];
+  departments: Department[];
+  isEditing: boolean;
+  onChange: (form: AssetForm) => void;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  const nguyenGia = Number(form.nguyenGia || 0);
+  const haoMonPercent = Math.min(100, Math.max(0, Number(form.haoMonLuyKe || 0)));
+  const giaTriConLai = Math.max(
+    0,
+    nguyenGia - Math.round((nguyenGia * haoMonPercent) / 100),
+  );
+
+  return (
+    <div className="modal-backdrop">
+      <form className="modal" onSubmit={onSubmit}>
+        <div className="panel-header">
+          <h2>{isEditing ? 'Sua tai san' : 'Them tai san'}</h2>
+          <button
+            className="icon-button"
+            onClick={onClose}
+            title="Dong"
+            type="button"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="form-grid">
+          <label>
+            Ma tai san
+            <input
+              disabled={isEditing}
+              onChange={(event) =>
+                onChange({ ...form, maTaiSan: event.target.value })
+              }
+              required
+              value={form.maTaiSan}
+            />
+          </label>
+          <label>
+            Ten tai san
+            <input
+              onChange={(event) =>
+                onChange({ ...form, tenTaiSan: event.target.value })
+              }
+              required
+              value={form.tenTaiSan}
+            />
+          </label>
+          <label>
+            Ma QR
+            <input
+              onChange={(event) => onChange({ ...form, maQR: event.target.value })}
+              value={form.maQR}
+            />
+          </label>
+          <label>
+            So hieu TSCD
+            <input
+              onChange={(event) =>
+                onChange({ ...form, soHieuTSCD: event.target.value })
+              }
+              value={form.soHieuTSCD}
+            />
+          </label>
+          <label>
+            Loai tai san
+            <select
+              onChange={(event) =>
+                onChange({ ...form, maLoai: event.target.value })
+              }
+              required
+              value={form.maLoai}
+            >
+              <option value="">Chon loai</option>
+              {categories.map((item) => (
+                <option key={item.maLoai} value={item.maLoai}>
+                  {item.tenLoai}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Phong ban
+            <select
+              onChange={(event) =>
+                onChange({ ...form, maPhongBanHienTai: event.target.value })
+              }
+              required
+              value={form.maPhongBanHienTai}
+            >
+              <option value="">Chon phong ban</option>
+              {departments.map((item) => (
+                <option key={item.maPhongBan} value={item.maPhongBan}>
+                  {item.tenPhongBan}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Serial
+            <input
+              onChange={(event) =>
+                onChange({ ...form, serial: event.target.value })
+              }
+              value={form.serial}
+            />
+          </label>
+          <label>
+            Model
+            <input
+              onChange={(event) => onChange({ ...form, model: event.target.value })}
+              value={form.model}
+            />
+          </label>
+          <label>
+            Nguyen gia
+            <input
+              min="0"
+              onChange={(event) =>
+                onChange({ ...form, nguyenGia: event.target.value })
+              }
+              required
+              type="number"
+              value={form.nguyenGia}
+            />
+          </label>
+          <label>
+            Hao mon luy ke (%)
+            <input
+              max="100"
+              min="0"
+              onChange={(event) =>
+                onChange({ ...form, haoMonLuyKe: event.target.value })
+              }
+              step="0.01"
+              type="number"
+              value={form.haoMonLuyKe}
+            />
+          </label>
+          <label>
+            Gia tri con lai
+            <input
+              min="0"
+              readOnly
+              type="number"
+              value={giaTriConLai}
+            />
+          </label>
+          <label>
+            Ngay nhap
+            <input
+              onChange={(event) =>
+                onChange({ ...form, ngayNhap: event.target.value })
+              }
+              required
+              type="date"
+              value={form.ngayNhap}
+            />
+          </label>
+          <label>
+            Trang thai
+            <select
+              onChange={(event) =>
+                onChange({
+                  ...form,
+                  trangThai: event.target.value as Asset['trangThai'],
+                })
+              }
+              value={form.trangThai}
+            >
+              <option value="HOAT_DONG">Hoat dong</option>
+              <option value="BAO_TRI">Bao tri</option>
+              <option value="HONG">Hong</option>
+            </select>
+          </label>
+          <label className="span-2">
+            Ghi chu
+            <textarea
+              onChange={(event) =>
+                onChange({ ...form, ghiChu: event.target.value })
+              }
+              rows={3}
+              value={form.ghiChu}
+            />
+          </label>
+        </div>
+
+        <div className="modal-actions">
+          <button className="secondary-button" onClick={onClose} type="button">
+            Huy
+          </button>
+          <button className="primary-button" type="submit">
+            <Save size={18} />
+            Luu tai san
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -1655,6 +2566,11 @@ function formatCurrency(value: number) {
     maximumFractionDigits: 0,
     style: 'currency',
   }).format(value);
+}
+
+function toDepreciationPercent(asset: Asset) {
+  if (!asset.nguyenGia) return 0;
+  return Number(((asset.haoMonLuyKe / asset.nguyenGia) * 100).toFixed(2));
 }
 
 function formatCurrencyShort(value: number) {
