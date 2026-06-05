@@ -13,7 +13,7 @@ interface SidebarProps {
   isCollapsed: boolean;
   navItems: NavItem[];
   currentView: string;
-  user: AuthUser;
+  user: AuthUser | null;
   onNavigate: (view: string) => void;
   onToggleSidebar: (open: boolean) => void;
   onToggleCollapse: (collapsed: boolean) => void;
@@ -34,7 +34,7 @@ export function Sidebar({
 
   const handleNavItemHover = (
     event: React.MouseEvent<HTMLButtonElement>,
-    label: string
+    label: string,
   ) => {
     if (isCollapsed) {
       const rect = event.currentTarget.getBoundingClientRect();
