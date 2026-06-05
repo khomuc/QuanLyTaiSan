@@ -1,34 +1,49 @@
 import { Menu, RefreshCw, User, LogOut } from 'lucide-react';
-import type { ReactNode } from 'react';
-import React from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import React, { useMemo } from 'react';
 import { Sidebar, type NavItem } from './Sidebar';
 import type { AuthUser } from '../lib/types';
+import { getVisibleNavItems } from '../lib/navigation';
 
 interface AppLayoutProps {
-  children: ReactNode;
-  navItems: NavItem[];
-  currentView: string;
-  user: AuthUser;
+  user: AuthUser | null;
   apiMode: 'api' | 'demo';
   loading: boolean;
-  onNavigate: (view: string) => void;
   onLogout: () => void;
   onReload: () => void;
 }
 
+const routeToKeyMap: Record<string, string> = {
+  '/dashboard': 'dashboard',
+  '/assets': 'assets',
+  '/employees': 'employees',
+  '/roles': 'roles',
+  '/approvals': 'approvals',
+  '/notifications': 'notifications',
+  '/settings': 'settings',
+  '/audit': 'audit',
+  '/profile': 'profile',
+};
+
 export function AppLayout({
-  children,
-  navItems,
-  currentView,
   user,
   apiMode,
   loading,
-  onNavigate,
   onLogout,
   onReload,
 }: AppLayoutProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+  const visibleNavItems = useMemo(
+    () => (user ? getVisibleNavItems(user) : []),
+    [user],
+  );
+
+  const currentView = routeToKeyMap[location.pathname] || 'dashboard';
+  const currentViewLabel = visibleNavItems.find((item) => item.key === currentView)?.label || 'Dashboard';
 
   React.useEffect(() => {
     function closeSidebarWithEscape(event: KeyboardEvent) {
@@ -37,7 +52,6 @@ export function AppLayout({
       }
     }
 
-    // Close sidebar on window resize (desktop view)
     function handleResize() {
       if (window.innerWidth > 768 && sidebarOpen) {
         setSidebarOpen(false);
@@ -52,15 +66,24 @@ export function AppLayout({
     };
   }, [sidebarOpen]);
 
+  const handleNavigate = (path: string) => {
+    navigate(`/${path}`);
+    setSidebarOpen(false);
+  };
+
   return (
-    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${sidebarOpen ? 'sidebar-open-mobile' : ''}`}>
+    <div
+      className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${
+        sidebarOpen ? 'sidebar-open-mobile' : ''
+      }`}
+    >
       <Sidebar
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}
-        navItems={navItems}
+        navItems={visibleNavItems}
         currentView={currentView}
         user={user}
-        onNavigate={onNavigate}
+        onNavigate={handleNavigate}
         onToggleSidebar={setSidebarOpen}
         onToggleCollapse={setSidebarCollapsed}
       />
@@ -79,7 +102,7 @@ export function AppLayout({
           </button>
           <div>
             <p className="eyebrow">Phan he System Lead</p>
-            <h1>{navItems.find((item) => item.key === currentView)?.label}</h1>
+            <h1>{currentViewLabel}</h1>
           </div>
           <div className="topbar-actions">
             <span className={`mode-pill ${apiMode}`}>
@@ -95,10 +118,10 @@ export function AppLayout({
             </button>
             <button
               className="profile-button"
-              onClick={() => onNavigate('profile')}
+              onClick={() => handleNavigate('profile')}
               type="button"
             >
-              <span>{user.hoTen}</span>
+              <span>{user?.hoTen}</span>
               <User size={18} />
             </button>
             <button
@@ -114,7 +137,7 @@ export function AppLayout({
 
         <main className="content">
           {loading && <div className="loading-bar" />}
-          {children}
+          <Outlet />
         </main>
 
         <footer className="footer">
