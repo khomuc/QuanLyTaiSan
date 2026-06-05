@@ -40,6 +40,23 @@ export const demoUser: AuthUser = {
   ],
 };
 
+export const guestUser: AuthUser = {
+  maNhanVien: 'GUEST',
+  hoTen: 'Khách truy cập',
+  chucVu: 'Guest Viewer',
+  email: 'guest@qlts.local',
+  soDienThoai: null,
+  maPhongBan: 'PB00',
+  tenPhongBan: 'Khách',
+  maVaiTro: 'GUEST',
+  tenVaiTro: 'Khách',
+  trangThai: 'ACTIVE',
+  permissions: [
+    'ASSET_VIEW',
+    'INVENTORY_VIEW',
+  ],
+};
+
 export const departments: Department[] = [
   { maPhongBan: 'PB01', tenPhongBan: 'Ban Giam hieu' },
   { maPhongBan: 'PB05', tenPhongBan: 'Phong Quan ly dao tao' },
@@ -132,6 +149,18 @@ export const employees: Employee[] = [
     tenVaiTro: 'Khach',
     trangThai: 'INACTIVE',
   },
+  {
+    maNhanVien: 'GUEST',
+    hoTen: 'Khách truy cập',
+    chucVu: 'Guest Viewer',
+    email: 'guest@qlts.local',
+    soDienThoai: null,
+    maPhongBan: 'PB00',
+    tenPhongBan: 'Khách',
+    maVaiTro: 'GUEST',
+    tenVaiTro: 'Khách',
+    trangThai: 'ACTIVE',
+  },
 ];
 
 export const permissions: Permission[] = [
@@ -189,6 +218,42 @@ export const permissions: Permission[] = [
     moTa: 'Ky duyet phieu kiem ke',
     module: 'INVENTORY',
   },
+  {
+    maQuyen: 'ASSET_VIEW',
+    tenQuyen: 'Xem tài sản',
+    moTa: 'Xem danh sách và chi tiết tài sản',
+    module: 'ASSET',
+  },
+  {
+    maQuyen: 'INVENTORY_VIEW',
+    tenQuyen: 'Xem kiểm kê',
+    moTa: 'Xem danh sách và chi tiết kiểm kê',
+    module: 'INVENTORY',
+  },
+  {
+    maQuyen: 'INVENTORY_CREATE',
+    tenQuyen: 'Tạo kiểm kê',
+    moTa: 'Tạo đợt kiểm kê mới',
+    module: 'INVENTORY',
+  },
+  {
+    maQuyen: 'INVENTORY_DELETE',
+    tenQuyen: 'Xóa kiểm kê',
+    moTa: 'Xóa đợt kiểm kê',
+    module: 'INVENTORY',
+  },
+  {
+    maQuyen: 'INVENTORY_SCAN',
+    tenQuyen: 'Quét kiểm kê',
+    moTa: 'Thực hiện quét tài sản trong đợt kiểm kê',
+    module: 'INVENTORY',
+  },
+  {
+    maQuyen: 'INVENTORY_MANAGE',
+    tenQuyen: 'Quản lý kiểm kê',
+    moTa: 'Toàn quyền quản lý kiểm kê',
+    module: 'INVENTORY',
+  },
 ];
 
 export const roles: Role[] = [
@@ -206,9 +271,9 @@ export const roles: Role[] = [
   },
   {
     maVaiTro: 'GUEST',
-    tenVaiTro: 'Khach',
-    moTa: 'Chi xem thong tin',
-    permissions: [],
+    tenVaiTro: 'Khách',
+    moTa: 'Chỉ xem thông tin cơ bản',
+    permissions: ['ASSET_VIEW', 'INVENTORY_VIEW'],
   },
 ];
 

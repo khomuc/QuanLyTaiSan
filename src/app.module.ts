@@ -12,6 +12,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RolesModule } from './roles/roles.module';
 import { SettingsModule } from './settings/settings.module';
+import { InventoryModule } from './inventory/inventory.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SettingsModule } from './settings/settings.module';
     NotificationsModule,
     SettingsModule,
     AuditLogsModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

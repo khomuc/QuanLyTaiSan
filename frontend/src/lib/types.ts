@@ -9,7 +9,9 @@ export type ViewKey =
   | 'notifications'
   | 'settings'
   | 'audit'
-  | 'profile';
+  | 'profile'
+  | 'scanner'
+  | 'inventory';
 
 export interface AuthUser {
   maNhanVien: string;
@@ -205,4 +207,15 @@ export interface AuditLogList {
     total: number;
     totalPages: number;
   };
+}
+
+export interface Inventory {
+  MaKiemKe: string;
+  NgayKiemKe: string;
+  NamKiemKe: number;
+  GhiChu?: string;
+
+  TongTaiSan?: number;
+  DaKiemKe?: number;
+  ChuaKiemKe?: number;
 }
