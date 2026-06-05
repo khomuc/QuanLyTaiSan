@@ -49,7 +49,7 @@ const emptyEmployee: EmployeeForm = {
   trangThai: 'ACTIVE',
 };
 
-function AppContent() {
+function AppContent({ user }: { user: AuthUser }) {
   const navigate = useNavigate();
   const [apiMode, setApiMode] = useState<ApiMode>('api');
   const [loading, setLoading] = useState(false);
@@ -377,7 +377,6 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/login" element={<Suspense fallback={<div className="loading-screen">Dang tai...</div>}><LoginScreen /></Suspense>} />
       <Route
         element={
           <AppLayout
@@ -391,7 +390,7 @@ function AppContent() {
               const path = window.location.pathname.slice(1);
               void loadView(path || 'dashboard');
             }}
-            user={null}
+            user={user}
           />
         }
       >
@@ -507,7 +506,7 @@ function AppContent() {
                 departments={departments}
                 onChangePassword={changePassword}
                 onSaveProfile={saveProfile}
-                user={null}
+                user={user}
               />
             </Suspense>
           }
@@ -578,7 +577,7 @@ function App() {
             !token ? (
               <Navigate to="/login" replace />
             ) : (
-              <AppContent />
+              <AppContent user={user!} />
             )
           }
         />
