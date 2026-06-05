@@ -1,13 +1,11 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { EmployeeModal } from './components/EmployeeModal';
 import { Toast } from './components/Toast';
-import { EmptyState } from './components/ui';
 import { api, clearStoredToken, getStoredToken, setStoredToken } from './lib/api';
 import * as demo from './lib/mockData';
-import { hasPermission } from './lib/navigation';
 import type {
   ApiMode,
   ApprovalItem,
@@ -49,25 +47,34 @@ const emptyEmployee: EmployeeForm = {
   trangThai: 'ACTIVE',
 };
 
-function AppContent({ user }: { user: AuthUser }) {
+const FALLBACK = <div className="loading-screen">Dang tai...</div>;
+
+// ─── AppContent ────────────────────────────────────────────────────────────────
+// Renders when the user is authenticated.
+// onLogout is lifted up to App so App can clear its own token/user state.
+
+interface AppContentProps {
+  user: AuthUser;
+  onLogout: () => void;
+}
+
+function AppContent({ user, onLogout }: AppContentProps) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
   const [apiMode, setApiMode] = useState<ApiMode>('api');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
 
   const [dashboard, setDashboard] = useState<DashboardOverview>(demo.dashboard);
   const [assets, setAssets] = useState<Asset[]>(demo.assets);
-  const [assetCategories, setAssetCategories] = useState<AssetCategory[]>(
-    demo.assetCategories,
-  );
+  const [assetCategories, setAssetCategories] = useState<AssetCategory[]>(demo.assetCategories);
   const [employees, setEmployees] = useState<Employee[]>(demo.employees);
   const [departments, setDepartments] = useState<Department[]>(demo.departments);
   const [roles, setRoles] = useState<Role[]>(demo.roles);
   const [permissions, setPermissions] = useState<Permission[]>(demo.permissions);
   const [approvals, setApprovals] = useState<ApprovalItem[]>(demo.approvals);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(
-    demo.notifications,
-  );
+  const [notifications, setNotifications] = useState<NotificationItem[]>(demo.notifications);
   const [settings, setSettings] = useState<SystemSettings>(demo.settings);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(demo.auditLogs.data);
 
@@ -89,10 +96,10 @@ function AppContent({ user }: { user: AuthUser }) {
 
   useEffect(() => {
     const selected = roles.find((role) => role.maVaiTro === selectedRoleId);
-    if (selected) {
-      setSelectedPermissionIds(selected.permissions);
-    }
+    if (selected) setSelectedPermissionIds(selected.permissions);
   }, [roles, selectedRoleId]);
+
+  // ── Data loading ────────────────────────────────────────────────────────────
 
   async function loadView(viewName: string) {
     setLoading(true);
@@ -100,15 +107,9 @@ function AppContent({ user }: { user: AuthUser }) {
       if (viewName === 'dashboard') {
         setDashboard(await api.dashboard());
       }
-
       if (viewName === 'assets') {
         const [assetList, categoryList, departmentList] = await Promise.all([
-          api.assets({
-            search: assetSearch,
-            maLoai: assetCategory,
-            maPhongBan: assetDepartment,
-            trangThai: assetStatus,
-          }),
+          api.assets({ search: assetSearch, maLoai: assetCategory, maPhongBan: assetDepartment, trangThai: assetStatus }),
           api.assetCategories(),
           api.departments(),
         ]);
@@ -116,7 +117,6 @@ function AppContent({ user }: { user: AuthUser }) {
         setAssetCategories(categoryList);
         setDepartments(departmentList);
       }
-
       if (viewName === 'employees') {
         const [employeeList, departmentList, roleList] = await Promise.all([
           api.employees(employeeSearch),
@@ -127,41 +127,22 @@ function AppContent({ user }: { user: AuthUser }) {
         setDepartments(departmentList);
         setRoles(roleList);
       }
-
       if (viewName === 'roles') {
-        const [roleList, permissionList] = await Promise.all([
-          api.roles(),
-          api.permissions(),
-        ]);
+        const [roleList, permissionList] = await Promise.all([api.roles(), api.permissions()]);
         setRoles(roleList);
         setPermissions(permissionList);
       }
-
-      if (viewName === 'approvals') {
-        setApprovals(await api.approvals());
-      }
-
-      if (viewName === 'notifications') {
-        setNotifications(await api.notifications());
-      }
-
-      if (viewName === 'settings') {
-        setSettings(await api.settings());
-      }
-
+      if (viewName === 'approvals') setApprovals(await api.approvals());
+      if (viewName === 'notifications') setNotifications(await api.notifications());
+      if (viewName === 'settings') setSettings(await api.settings());
       if (viewName === 'audit') {
         const logs = await api.auditLogs(auditSearch);
         setAuditLogs(logs.data);
       }
-
       if (viewName === 'profile') {
-        const [profile, departmentList] = await Promise.all([
-          api.me(),
-          api.profileDepartments(),
-        ]);
+        const [, departmentList] = await Promise.all([api.me(), api.profileDepartments()]);
         setDepartments(departmentList);
       }
-
       setApiMode('api');
     } catch {
       loadDemoView(viewName);
@@ -173,25 +154,27 @@ function AppContent({ user }: { user: AuthUser }) {
 
   function loadDemoView(viewName: string) {
     if (viewName === 'dashboard') setDashboard(demo.dashboard);
-    if (viewName === 'assets') {
-      setAssets(demo.assets);
-      setAssetCategories(demo.assetCategories);
-      setDepartments(demo.departments);
-    }
-    if (viewName === 'employees') {
-      setEmployees(demo.employees);
-      setDepartments(demo.departments);
-      setRoles(demo.roles);
-    }
-    if (viewName === 'roles') {
-      setRoles(demo.roles);
-      setPermissions(demo.permissions);
-    }
+    if (viewName === 'assets') { setAssets(demo.assets); setAssetCategories(demo.assetCategories); setDepartments(demo.departments); }
+    if (viewName === 'employees') { setEmployees(demo.employees); setDepartments(demo.departments); setRoles(demo.roles); }
+    if (viewName === 'roles') { setRoles(demo.roles); setPermissions(demo.permissions); }
     if (viewName === 'approvals') setApprovals(demo.approvals);
     if (viewName === 'notifications') setNotifications(demo.notifications);
     if (viewName === 'settings') setSettings(demo.settings);
     if (viewName === 'audit') setAuditLogs(demo.auditLogs.data);
   }
+
+  // Auto-load data whenever the route changes.
+  // We keep a ref so the effect only re-runs on pathname change, not on every
+  // re-render of loadView (which closes over filter state).
+  const loadViewRef = useRef(loadView);
+  useEffect(() => { loadViewRef.current = loadView; });
+
+  useEffect(() => {
+    const view = pathname.replace(/^\//, '') || 'dashboard';
+    void loadViewRef.current(view);
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Employee CRUD ────────────────────────────────────────────────────────────
 
   function openCreateEmployee() {
     setEditingEmployee(null);
@@ -217,61 +200,40 @@ function AppContent({ user }: { user: AuthUser }) {
 
   async function saveEmployee(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const payload = {
       ...employeeForm,
       chucVu: employeeForm.chucVu || undefined,
       soDienThoai: employeeForm.soDienThoai || undefined,
       matKhau: employeeForm.matKhau || undefined,
     };
-
     try {
       if (editingEmployee) {
         const updated = await api.updateEmployee(editingEmployee, payload);
-        setEmployees((current) =>
-          current.map((employee) =>
-            employee.maNhanVien === editingEmployee ? updated : employee,
-          ),
-        );
+        setEmployees((cur) => cur.map((e) => (e.maNhanVien === editingEmployee ? updated : e)));
       } else {
-        const created = await api.createEmployee({
-          ...payload,
-          matKhau: employeeForm.matKhau || '123456',
-        });
-        setEmployees((current) => [created, ...current]);
+        const created = await api.createEmployee({ ...payload, matKhau: employeeForm.matKhau || '123456' });
+        setEmployees((cur) => [created, ...cur]);
       }
       setToast('Da luu nhan vien');
     } catch {
-      const fallbackEmployee: Employee = {
+      const fallback: Employee = {
         maNhanVien: employeeForm.maNhanVien,
         hoTen: employeeForm.hoTen,
         chucVu: employeeForm.chucVu || null,
         email: employeeForm.email,
         soDienThoai: employeeForm.soDienThoai || null,
         maPhongBan: employeeForm.maPhongBan,
-        tenPhongBan:
-          departments.find(
-            (department) => department.maPhongBan === employeeForm.maPhongBan,
-          )?.tenPhongBan ?? null,
+        tenPhongBan: departments.find((d) => d.maPhongBan === employeeForm.maPhongBan)?.tenPhongBan ?? null,
         maVaiTro: employeeForm.maVaiTro,
-        tenVaiTro:
-          roles.find((role) => role.maVaiTro === employeeForm.maVaiTro)
-            ?.tenVaiTro ?? null,
+        tenVaiTro: roles.find((r) => r.maVaiTro === employeeForm.maVaiTro)?.tenVaiTro ?? null,
         trangThai: employeeForm.trangThai,
       };
-
-      setEmployees((current) => {
-        if (editingEmployee) {
-          return current.map((employee) =>
-            employee.maNhanVien === editingEmployee ? fallbackEmployee : employee,
-          );
-        }
-        return [fallbackEmployee, ...current];
-      });
+      setEmployees((cur) =>
+        editingEmployee ? cur.map((e) => (e.maNhanVien === editingEmployee ? fallback : e)) : [fallback, ...cur],
+      );
       setApiMode('demo');
       setToast('Da cap nhat tren du lieu demo');
     }
-
     setEmployeeModal(false);
   }
 
@@ -283,47 +245,25 @@ function AppContent({ user }: { user: AuthUser }) {
       setApiMode('demo');
       setToast('Da khoa tren du lieu demo');
     }
-
-    setEmployees((current) =>
-      current.map((employee) =>
-        employee.maNhanVien === maNhanVien
-          ? { ...employee, trangThai: 'INACTIVE' }
-          : employee,
-      ),
-    );
+    setEmployees((cur) => cur.map((e) => (e.maNhanVien === maNhanVien ? { ...e, trangThai: 'INACTIVE' } : e)));
   }
+
+  // ── Other actions ────────────────────────────────────────────────────────────
 
   async function saveRolePermissions() {
     if (!selectedRole) return;
-
     try {
-      const updated = await api.assignPermissions(
-        selectedRole.maVaiTro,
-        selectedPermissionIds,
-      );
-      setRoles((current) =>
-        current.map((role) =>
-          role.maVaiTro === updated.maVaiTro ? updated : role,
-        ),
-      );
+      const updated = await api.assignPermissions(selectedRole.maVaiTro, selectedPermissionIds);
+      setRoles((cur) => cur.map((r) => (r.maVaiTro === updated.maVaiTro ? updated : r)));
       setToast('Da cap nhat quyen');
     } catch {
-      setRoles((current) =>
-        current.map((role) =>
-          role.maVaiTro === selectedRole.maVaiTro
-            ? { ...role, permissions: selectedPermissionIds }
-            : role,
-        ),
-      );
+      setRoles((cur) => cur.map((r) => (r.maVaiTro === selectedRole.maVaiTro ? { ...r, permissions: selectedPermissionIds } : r)));
       setApiMode('demo');
       setToast('Da cap nhat quyen tren du lieu demo');
     }
   }
 
-  async function signApproval(
-    item: ApprovalItem,
-    status: 'DA_KY' | 'TU_CHOI',
-  ) {
+  async function signApproval(item: ApprovalItem, status: 'DA_KY' | 'TU_CHOI') {
     try {
       await api.signApproval(item, status);
       setToast(status === 'DA_KY' ? 'Da ky duyet' : 'Da tu choi');
@@ -331,14 +271,7 @@ function AppContent({ user }: { user: AuthUser }) {
       setApiMode('demo');
       setToast(status === 'DA_KY' ? 'Da ky duyet demo' : 'Da tu choi demo');
     }
-
-    setApprovals((current) =>
-      current.filter(
-        (approval) =>
-          approval.maPhieu !== item.maPhieu ||
-          approval.loaiPhieu !== item.loaiPhieu,
-      ),
-    );
+    setApprovals((cur) => cur.filter((a) => a.maPhieu !== item.maPhieu || a.loaiPhieu !== item.loaiPhieu));
   }
 
   async function saveSettings(nextSettings: SystemSettings) {
@@ -357,9 +290,6 @@ function AppContent({ user }: { user: AuthUser }) {
       await api.updateProfile(payload);
       setToast('Da cap nhat thong tin ca nhan');
     } catch {
-      const department = departments.find(
-        (item) => item.maPhongBan === payload.maPhongBan,
-      );
       setApiMode('demo');
       setToast('Da cap nhat thong tin demo');
     }
@@ -375,147 +305,163 @@ function AppContent({ user }: { user: AuthUser }) {
     }
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
-    <Routes>
-      <Route
-        element={
-          <AppLayout
-            apiMode={apiMode}
-            loading={loading}
-            onLogout={() => {
-              clearStoredToken();
-              navigate('/login');
-            }}
-            onReload={() => {
-              const path = window.location.pathname.slice(1);
-              void loadView(path || 'dashboard');
-            }}
-            user={user}
+    <>
+      <Routes>
+        <Route
+          element={
+            <AppLayout
+              apiMode={apiMode}
+              loading={loading}
+              onLogout={onLogout}
+              onReload={() => {
+                const view = pathname.replace(/^\//, '') || 'dashboard';
+                void loadView(view);
+              }}
+              user={user}
+            />
+          }
+        >
+          <Route
+            path="/dashboard"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <DashboardPage data={dashboard} onNavigate={(path) => navigate(`/${path}`)} />
+              </Suspense>
+            }
           />
-        }
-      >
-        <Route
-          path="/dashboard"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <DashboardPage data={dashboard} onNavigate={(path) => navigate(`/${path}`)} />
-            </Suspense>
-          }
+          <Route
+            path="/assets"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <AssetsPage
+                  assets={assets}
+                  categories={assetCategories}
+                  departments={departments}
+                  search={assetSearch}
+                  status={assetStatus}
+                  category={assetCategory}
+                  department={assetDepartment}
+                  onSearch={setAssetSearch}
+                  onStatus={setAssetStatus}
+                  onCategory={setAssetCategory}
+                  onDepartment={setAssetDepartment}
+                  onRefresh={() => void loadView('assets')}
+                />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <EmployeesPage
+                  employees={employees}
+                  search={employeeSearch}
+                  onSearch={setEmployeeSearch}
+                  onCreate={openCreateEmployee}
+                  onEdit={openEditEmployee}
+                  onDelete={(id) => void deactivateEmployee(id)}
+                  onRefresh={() => void loadView('employees')}
+                />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/roles"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <RolesPage
+                  roles={roles}
+                  permissions={permissions}
+                  selectedRoleId={selectedRoleId}
+                  selectedPermissionIds={selectedPermissionIds}
+                  onSelectRole={setSelectedRoleId}
+                  onTogglePermission={(id) =>
+                    setSelectedPermissionIds((cur) =>
+                      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+                    )
+                  }
+                  onSave={() => void saveRolePermissions()}
+                />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/approvals"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <ApprovalsPage approvals={approvals} onSign={signApproval} />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <NotificationsPage notifications={notifications} />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <SettingsPage settings={settings} onSave={saveSettings} />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <AuditPage
+                  logs={auditLogs}
+                  search={auditSearch}
+                  onSearch={setAuditSearch}
+                  onRefresh={() => void loadView('audit')}
+                />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <ProfilePage
+                  departments={departments}
+                  onChangePassword={changePassword}
+                  onSaveProfile={saveProfile}
+                  user={user}
+                />
+              </Suspense>
+            }
+          />
+        </Route>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+
+      {employeeModal && (
+        <EmployeeModal
+          departments={departments}
+          isEditing={editingEmployee !== null}
+          form={employeeForm}
+          onChange={setEmployeeForm}
+          onClose={() => setEmployeeModal(false)}
+          onSubmit={saveEmployee}
+          roles={roles}
         />
-        <Route
-          path="/assets"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <AssetsPage
-                assets={assets}
-                categories={assetCategories}
-                departments={departments}
-                search={assetSearch}
-                status={assetStatus}
-                category={assetCategory}
-                department={assetDepartment}
-                onSearch={setAssetSearch}
-                onStatus={setAssetStatus}
-                onCategory={setAssetCategory}
-                onDepartment={setAssetDepartment}
-                onRefresh={() => void loadView('assets')}
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/employees"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <EmployeesPage
-                employees={employees}
-                search={employeeSearch}
-                onSearch={setEmployeeSearch}
-                onCreate={openCreateEmployee}
-                onEdit={openEditEmployee}
-                onDelete={(maNhanVien) => void deactivateEmployee(maNhanVien)}
-                onRefresh={() => void loadView('employees')}
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/roles"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <RolesPage
-                roles={roles}
-                permissions={permissions}
-                selectedRoleId={selectedRoleId}
-                selectedPermissionIds={selectedPermissionIds}
-                onSelectRole={setSelectedRoleId}
-                onTogglePermission={(permissionId) =>
-                  setSelectedPermissionIds((current) =>
-                    current.includes(permissionId)
-                      ? current.filter((id) => id !== permissionId)
-                      : [...current, permissionId],
-                  )
-                }
-                onSave={() => void saveRolePermissions()}
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/approvals"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <ApprovalsPage approvals={approvals} onSign={signApproval} />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/notifications"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <NotificationsPage notifications={notifications} />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <SettingsPage settings={settings} onSave={saveSettings} />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/audit"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <AuditPage
-                logs={auditLogs}
-                search={auditSearch}
-                onSearch={setAuditSearch}
-                onRefresh={() => void loadView('audit')}
-              />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-              <ProfilePage
-                departments={departments}
-                onChangePassword={changePassword}
-                onSaveProfile={saveProfile}
-                user={user}
-              />
-            </Suspense>
-          }
-        />
-      </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+      )}
+      {toast && <Toast message={toast} onClose={() => setToast('')} />}
+    </>
   );
 }
+
+// ─── App (root) ────────────────────────────────────────────────────────────────
+// Owns auth state (token + user). Passes handleLogout to AppContent so that
+// logging out correctly clears React state, not just localStorage.
 
 function App() {
   const [token, setToken] = useState(getStoredToken());
@@ -523,10 +469,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) { setLoading(false); return; }
 
     if (token === 'demo-token') {
       setUser(demo.demoUser);
@@ -534,21 +477,21 @@ function App() {
       return;
     }
 
-    api
-      .me()
-      .then((profile) => {
-        setUser(profile);
-      })
-      .catch(() => {
-        clearStoredToken();
-        setToken(null);
-      })
+    api.me()
+      .then((profile) => setUser(profile))
+      .catch(() => { clearStoredToken(); setToken(null); })
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) {
-    return <div className="loading-screen">Dang tai...</div>;
+  // Clears both localStorage AND React state — the route guard (!token → /login)
+  // then automatically redirects without needing an explicit navigate() call.
+  function handleLogout() {
+    clearStoredToken();
+    setToken(null);
+    setUser(null);
   }
+
+  if (loading) return <div className="loading-screen">Dang tai...</div>;
 
   return (
     <BrowserRouter>
@@ -577,7 +520,7 @@ function App() {
             !token ? (
               <Navigate to="/login" replace />
             ) : (
-              <AppContent user={user!} />
+              <AppContent user={user!} onLogout={handleLogout} />
             )
           }
         />
