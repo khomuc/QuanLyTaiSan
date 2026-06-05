@@ -418,7 +418,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 ## 👤 Contributors
 
-- **Initial Development**: homnaytoidilam
+- **Initial Development**: nnhuwz03
 - **Router Migration**: Phase 7 Updates
 - **Last Updated**: June 5, 2026
 
