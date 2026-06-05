@@ -1,14 +1,13 @@
 import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import { FormEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import * as demo from '../lib/mockData';
-import type { AuthUser } from '../lib/types';
 
-export default function LoginScreen({
-  onSuccess,
-}: {
-  onSuccess: (result: { token: string; user: AuthUser }) => void;
-}) {
+export default function LoginScreen() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('hieutruong@ctu.edu.vn');
   const [password, setPassword] = useState('123456');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,13 +21,19 @@ export default function LoginScreen({
 
     try {
       const result = await api.login(email, password);
-      onSuccess({ token: result.accessToken, user: result.user });
+      login(result.accessToken, result.user);
+      navigate('/dashboard', { replace: true });
     } catch {
       setError('Khong dang nhap duoc API hien tai');
     } finally {
       setLoading(false);
     }
   }
+
+  const handleDemo = () => {
+    login('demo-token', demo.demoUser);
+    navigate('/dashboard', { replace: true });
+  };
 
   return (
     <main className="login-page">
@@ -77,7 +82,7 @@ export default function LoginScreen({
           </button>
           <button
             className="secondary-button"
-            onClick={() => onSuccess({ token: 'demo-token', user: demo.demoUser })}
+            onClick={handleDemo}
             type="button"
           >
             Mo giao dien demo

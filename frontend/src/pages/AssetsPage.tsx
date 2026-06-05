@@ -1,55 +1,74 @@
+import { useEffect, useState } from 'react';
 import { BarChart3, Filter, PackageSearch, QrCode, RefreshCw, Search } from 'lucide-react';
 import { EmptyState, KpiTile, StatusPill } from '../components/ui';
 import { formatCurrency, formatCurrencyShort } from '../lib/format';
+import { api } from '../lib/api';
+import * as demo from '../lib/mockData';
+import { useData } from '../contexts/DataContext';
 import type { Asset, AssetCategory, Department } from '../lib/types';
 
-export default function AssetsPage({
-  assets,
-  categories,
-  departments,
-  search,
-  status,
-  category,
-  department,
-  onSearch,
-  onStatus,
-  onCategory,
-  onDepartment,
-  onRefresh,
-}: {
-  assets: Asset[];
-  categories: AssetCategory[];
-  departments: Department[];
-  search: string;
-  status: string;
-  category: string;
-  department: string;
-  onSearch: (value: string) => void;
-  onStatus: (value: string) => void;
-  onCategory: (value: string) => void;
-  onDepartment: (value: string) => void;
-  onRefresh: () => void;
-}) {
+export default function AssetsPage() {
+  const { assets, assetCategories, departments, setAssets, setAssetCategories, setDepartments } = useData();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [category, setCategory] = useState('');
+  const [department, setDepartment] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadAssets();
+  }, []);
+
+  const loadAssets = async () => {
+    setLoading(true);
+    try {
+      const [assetList, categoryList, departmentList] = await Promise.all([
+        api.assets({
+          search,
+          maLoai: category,
+          maPhongBan: department,
+          trangThai: status,
+        }),
+        api.assetCategories(),
+        api.departments(),
+      ]);
+      setAssets(assetList.data);
+      setAssetCategories(categoryList);
+      setDepartments(departmentList);
+    } catch {
+      setAssets(demo.assets);
+      setAssetCategories(demo.assetCategories);
+      setDepartments(demo.departments);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyFilter = async () => {
+    await loadAssets();
+  };
+
   const totalValue = assets.reduce((sum, asset) => sum + asset.giaTriConLai, 0);
 
   return (
     <div className="assets-layout">
+      {loading && <div className="loading-bar" />}
       <section className="asset-toolbar panel">
         <div className="search-box">
           <Search size={18} />
           <input
-            onChange={(event) => onSearch(event.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             placeholder="Tim ma tai san, QR, ten, serial"
             value={search}
           />
         </div>
         <select
           aria-label="Loc loai tai san"
-          onChange={(event) => onCategory(event.target.value)}
+          onChange={(event) => setCategory(event.target.value)}
           value={category}
         >
           <option value="">Tat ca loai</option>
-          {categories.map((item) => (
+          {assetCategories.map((item) => (
             <option key={item.maLoai} value={item.maLoai}>
               {item.tenLoai}
             </option>
@@ -57,7 +76,7 @@ export default function AssetsPage({
         </select>
         <select
           aria-label="Loc phong ban"
-          onChange={(event) => onDepartment(event.target.value)}
+          onChange={(event) => setDepartment(event.target.value)}
           value={department}
         >
           <option value="">Tat ca phong ban</option>
@@ -69,7 +88,7 @@ export default function AssetsPage({
         </select>
         <select
           aria-label="Loc trang thai"
-          onChange={(event) => onStatus(event.target.value)}
+          onChange={(event) => setStatus(event.target.value)}
           value={status}
         >
           <option value="">Tat ca trang thai</option>
@@ -77,7 +96,7 @@ export default function AssetsPage({
           <option value="BAO_TRI">Bao tri</option>
           <option value="HONG">Hong</option>
         </select>
-        <button className="primary-button" onClick={onRefresh} type="button">
+        <button className="primary-button" onClick={handleApplyFilter} type="button">
           <Filter size={18} />
           Ap dung
         </button>
@@ -108,7 +127,7 @@ export default function AssetsPage({
       <section className="panel full">
         <div className="panel-header">
           <h2>Danh muc tai san</h2>
-          <button className="icon-button" onClick={onRefresh} title="Tai lai">
+          <button className="icon-button" onClick={handleApplyFilter} title="Tai lai">
             <RefreshCw size={18} />
           </button>
         </div>
