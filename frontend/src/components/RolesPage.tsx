@@ -74,7 +74,7 @@ export function RolesPage({
                 title="Lưu phân quyền"
               >
                 <Save size={18} />
-                Lưu phân quyền
+                Lưu
               </button>
             </div>
 
@@ -110,10 +110,7 @@ export function RolesPage({
                   <div key={moduleName} className="permission-module">
                     {/* Module Header */}
                     <div className="module-header">
-                      <h3>
-                        <span className="module-icon">📦</span>
-                        {moduleName}
-                      </h3>
+                      <h3>{moduleName}</h3>
                       <span className="module-count">
                         {moduleCheckedCount}/{modulePermissions.length}
                       </span>
@@ -154,9 +151,6 @@ export function RolesPage({
                                 {permission.maQuyen}
                               </span>
                             </div>
-                            {isChecked && (
-                              <div className="permission-check">✓</div>
-                            )}
                           </label>
                         );
                       })}
@@ -170,7 +164,7 @@ export function RolesPage({
           <div className="no-selection">
             <div className="no-selection-icon">👈</div>
             <h3>Chọn vai trò</h3>
-            <p>Vui lòng chọn một vai trò từ bên trái để quản lý quyền</p>
+            <p>Vui lòng chọn một vai trò từ bên trái</p>
           </div>
         )}
       </section>
