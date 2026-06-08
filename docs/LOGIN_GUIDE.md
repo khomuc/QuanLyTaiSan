@@ -421,7 +421,7 @@ Content-Type: application/json
 
 1. Tải lại trang — hệ thống tự phát hiện token hết hạn và chuyển về login.
 2. Đăng nhập lại để lấy token mới.
-3. *(Sắp có)* Refresh token tự động.
+3. *(Đã thực hiện)* Refresh token tự động.
 
 ---
 
