@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   PackageSearch,
   Users,
+  UserCog,
   ShieldCheck,
   ClipboardCheck,
   Bell,
@@ -35,13 +36,13 @@ const allNavItems: NavItem[] = [
   {
     key: 'employees',
     label: 'Nhân viên',
-    icon: Users,
+    icon: Users,                  // nhóm người – xem danh sách
     requiredPermissions: ['STAFF_VIEW'],
   },
   {
     key: 'staff-management',
     label: 'Quản lý nhân viên',
-    icon: Users,
+    icon: UserCog,                // người + bánh răng – quản lý / phân quyền
     requiredPermissions: ['STAFF_MANAGE', 'ROLE_MANAGE'],
   },
   {
