@@ -219,7 +219,7 @@ Khi bấm **Đăng xuất:**
 2. Session hết hiệu lực ngay lập tức.
 3. Người dùng được chuyển về trang đăng nhập.
 
-### Sắp Ra Mắt: Refresh Token
+### Đã xây dựng (_chưa tích hợp vào /frontend_): Refresh Token
 
 ```
 POST /api/auth/refresh
