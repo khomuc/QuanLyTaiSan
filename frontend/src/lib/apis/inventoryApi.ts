@@ -113,13 +113,23 @@ export const inventoryApi = {
   updateScannedAsset(data: {
     maKiemKe: string;
     maTaiSan: string;
-    tinhTrangThucTe: string;
+    haoMonLuyKe: string;
     viTriHienTai: string;
     ghiChu?: string;
   }) {
     return request<any>('/inventory/scan', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  getReport(maKiemKe: string) {
+    return request<any>(`/inventory/${maKiemKe}/report`);
+  },
+
+  completeInventory(maKiemKe: string) {
+    return request<any>(`/inventory/${maKiemKe}/complete`, {
+      method: 'POST',
     });
   },
 };

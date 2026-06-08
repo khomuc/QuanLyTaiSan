@@ -11,11 +11,12 @@ import {
   Flashlight,
   FlashlightOff,
   ListChecks,
+  FileText,
 } from 'lucide-react';
 import { useZxing } from 'react-zxing';
 import { useNavigate, useParams } from 'react-router-dom';
-import { inventoryApi } from '../lib/apis/inventoryApi';
-import { Toast } from '../components/Toast';
+import { inventoryApi } from '../../lib/apis/inventoryApi';
+import { Toast } from '../../components/Toast';
 
 type ScanStatus = 'success' | 'error' | 'pending';
 type AssetStatusFilter = 'all' | 'scanned' | 'missing';
@@ -506,7 +507,7 @@ export default function ScannerPage() {
       await inventoryApi.updateScannedAsset({
         maKiemKe,
         maTaiSan,
-        tinhTrangThucTe: form.haoMonLuyKe,
+        haoMonLuyKe: form.haoMonLuyKe,
         viTriHienTai: form.viTriHienTai,
         ghiChu: form.ghiChu,
       });
@@ -567,6 +568,15 @@ export default function ScannerPage() {
         </div>
 
         <div className="scanner-toolbar__actions">
+          <button
+            className="secondary-button"
+            onClick={() => navigate(`/inventory/${maKiemKe}/report`)}
+            type="button"
+          >
+            <FileText size={18} />
+            Xem báo cáo
+          </button>
+
           <button
             className="secondary-button"
             onClick={() => navigate('/inventory')}
@@ -933,7 +943,7 @@ export default function ScannerPage() {
                 <th>Nguyên giá</th>
                 <th>Giá trị còn lại</th>
                 <th>Hao mòn sổ sách</th>
-                <th>Hao mòn thực tế</th>
+                <th>Tình trạng thực tế</th>
                 <th>Phòng ban hệ thống</th>
                 <th>Vị trí hiện tại</th>
                 <th>Thời gian quét</th>

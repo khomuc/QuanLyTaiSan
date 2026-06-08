@@ -54,6 +54,8 @@ export const guestUser: AuthUser = {
   permissions: [
     'ASSET_VIEW',
     'INVENTORY_VIEW',
+    'INVENTORY_MANAGE',
+    'INVENTORY_SCAN',
   ],
 };
 

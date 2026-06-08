@@ -8,13 +8,14 @@ import {
   Calendar,
   RefreshCcw,
   X,
+  FileText,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { inventoryApi } from '../lib/apis/inventoryApi';
-import type { Inventory } from '../lib/types';
-import { Toast } from '../components/Toast';
-import { useAuth } from '../contexts/AuthContext';
+import { inventoryApi } from '../../lib/apis/inventoryApi';
+import type { Inventory } from '../../lib/types';
+import { Toast } from '../../components/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const INVENTORY_PERMISSION = {
   MANAGE: 'INVENTORY_MANAGE',
@@ -488,6 +489,15 @@ export default function InventoryPage() {
                           onClick={() => loadDetail(maKiemKe)}
                         >
                           <Eye size={16} />
+                        </button>
+
+                        <button
+                          className="icon-button"
+                          title="Xem báo cáo"
+                          onClick={() => navigate(`/inventory/${maKiemKe}/report`)}
+                          type="button"
+                        >
+                          <FileText size={16} />
                         </button>
 
                         {canScanInventory && (

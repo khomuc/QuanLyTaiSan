@@ -188,6 +188,7 @@ export class InventoryController {
         return this.inventoryService.updateAsset(
             body.maKiemKe,
             body.maTaiSan,
+            body.haoMonLuyKe,
             body.viTriHienTai,
             body.ghiChu,
         );
@@ -202,5 +203,12 @@ export class InventoryController {
             maKiemKe,
             maTaiSan,
         );
+    }
+
+    @Get(':maKiemKe/report')
+    getReport(
+        @Param('maKiemKe') maKiemKe: string,
+    ) {
+        return this.inventoryService.getReport(maKiemKe);
     }
 }

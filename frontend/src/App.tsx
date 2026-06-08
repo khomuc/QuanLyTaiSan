@@ -3,11 +3,12 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import LoginScreen from './pages/LoginScreen';
 import { AppLayout } from './components/AppLayout';
 import { getVisibleNavItems } from './lib/navigation';
-import InventoryPage from './pages/InventoryPage';
+import InventoryPage from './pages/inventory/InventoryPage';
 import AssetDetailPage from './pages/AssetDetailPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import InventoryReportPage from './pages/inventory/InventoryReportPage';
 
-const ScannerPage = lazy(() => import('./pages/ScannerPage'));
+const ScannerPage = lazy(() => import('./pages/inventory/ScannerPage'));
 
 function ProtectedLayout() {
   const { user, apiMode, loading, logout, reloadProfile } = useAuth();
@@ -59,6 +60,8 @@ function AppRoutes() {
           <Route path="inventory" element={<InventoryPage />} />
 
           <Route path="assets/:maTaiSan" element={<AssetDetailPage />} />
+
+          <Route path="/inventory/:maKiemKe/report" element={<InventoryReportPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

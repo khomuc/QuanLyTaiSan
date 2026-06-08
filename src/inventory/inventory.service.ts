@@ -518,6 +518,7 @@ export class InventoryService {
   async updateAsset(
     maKiemKe: string,
     maTaiSan: string,
+    haoMonLuyKe: string,
     viTriHienTai: string,
     ghiChu?: string,
   ) {
@@ -532,6 +533,7 @@ export class InventoryService {
       (
         MaKiemKe,
         MaTaiSan,
+        TinhTrangThucTe,
         ThoiGianQuet,
         ViTriHienTai,
         GhiChu
@@ -545,6 +547,7 @@ export class InventoryService {
       [
         maKiemKe,
         maTaiSan,
+        haoMonLuyKe,
         viTriHienTai,
         ghiChu || null,
       ],
@@ -882,5 +885,38 @@ export class InventoryService {
     }
 
     return rows[0];
+  }
+
+  async getReport(maKiemKe: string) {
+    const inventory = await this.getInventory(maKiemKe);
+
+    const [
+      summary,
+      allAssets,
+      scannedAssets,
+      missingAssets,
+      wrongLocationAssets,
+      members,
+    ] = await Promise.all([
+      this.getSummary(maKiemKe),
+      this.getAssets(maKiemKe),
+      this.getScannedAssets(maKiemKe),
+      this.getMissingAssets(maKiemKe),
+      this.getWrongLocation(maKiemKe),
+      this.getMembers(maKiemKe).catch(() => []),
+    ]);
+
+    return {
+      inventory,
+      summary,
+      members,
+      assets: {
+        all: allAssets,
+        scanned: scannedAssets,
+        missing: missingAssets,
+        wrongLocation: wrongLocationAssets,
+      },
+      generatedAt: new Date(),
+    };
   }
 }
