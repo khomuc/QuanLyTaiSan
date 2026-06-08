@@ -6,12 +6,14 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import type { SignOptions } from 'jsonwebtoken';
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { MYSQL_CONNECTION } from '../common/constants';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 interface EmployeeAuthRow extends RowDataPacket {
@@ -30,6 +32,13 @@ interface EmployeeAuthRow extends RowDataPacket {
   UpdatedAt: Date;
 }
 
+interface RefreshTokenPayload {
+  sub: string;
+  type: 'refresh';
+  iat?: number;
+  exp?: number;
+}
+
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
 
 @Injectable()
@@ -38,6 +47,8 @@ export class AuthService {
     @Inject(MYSQL_CONNECTION) private readonly db: Pool,
     private readonly jwtService: JwtService,
   ) {}
+
+  // ─── Public methods ──────────────────────────────────────────────────────────
 
   async login(dto: LoginDto) {
     const employee = await this.findEmployeeByEmail(dto.email);
@@ -53,7 +64,13 @@ export class AuthService {
 
     const permissions = await this.getPermissions(employee.MaVaiTro);
     const user = this.toAuthUser(employee, permissions);
-    const accessToken = await this.signToken(user);
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.signToken(user),
+      this.signRefreshToken(employee.MaNhanVien),
+    ]);
+
+    await this.storeRefreshToken(employee.MaNhanVien, refreshToken);
 
     await this.writeAudit(
       user.maNhanVien,
@@ -64,9 +81,111 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       tokenType: 'Bearer',
       user,
     };
+  }
+
+  /**
+   * POST /auth/refresh
+   * Validates refresh token, revokes it, and issues a new pair (token rotation).
+   */
+  async refresh(dto: RefreshTokenDto) {
+    // 1. Verify JWT signature & expiry
+    let payload: RefreshTokenPayload;
+    try {
+      payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
+        dto.refreshToken,
+        {
+          secret:
+            process.env.JWT_REFRESH_SECRET ??
+            'quan-ly-tai-san-refresh-secret',
+        },
+      );
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    if (payload.type !== 'refresh') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    // 2. Check token exists in DB and has not been revoked
+    const hash = this.hashToken(dto.refreshToken);
+    const [rows] = await this.db.execute<RowDataPacket[]>(
+      `SELECT Id
+       FROM REFRESH_TOKEN
+       WHERE TokenHash   = ?
+         AND MaNhanVien  = ?
+         AND RevokedAt  IS NULL
+         AND ExpiresAt   > NOW()
+       LIMIT 1`,
+      [hash, payload.sub],
+    );
+
+    if (!rows.length) {
+      // Possible token reuse attack — revoke all tokens for this user
+      await this.revokeAllTokens(payload.sub);
+      throw new UnauthorizedException(
+        'Refresh token has been revoked. Please log in again.',
+      );
+    }
+
+    // 3. Revoke the used token (rotation: one-time use)
+    await this.db.execute(
+      `UPDATE REFRESH_TOKEN SET RevokedAt = NOW() WHERE TokenHash = ?`,
+      [hash],
+    );
+
+    // 4. Re-load employee to get fresh state
+    const employee = await this.findEmployeeById(payload.sub);
+    if (!employee || employee.TrangThai !== 'ACTIVE') {
+      throw new UnauthorizedException('Account is inactive or not found');
+    }
+
+    // 5. Issue new token pair
+    const permissions = await this.getPermissions(employee.MaVaiTro);
+    const user = this.toAuthUser(employee, permissions);
+
+    const [newAccessToken, newRefreshToken] = await Promise.all([
+      this.signToken(user),
+      this.signRefreshToken(employee.MaNhanVien),
+    ]);
+
+    await this.storeRefreshToken(employee.MaNhanVien, newRefreshToken);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      tokenType: 'Bearer',
+    };
+  }
+
+  /**
+   * POST /auth/logout
+   * Revokes the provided refresh token so it can no longer be used.
+   */
+  async logout(user: AuthUser, dto: RefreshTokenDto) {
+    const hash = this.hashToken(dto.refreshToken);
+
+    await this.db.execute(
+      `UPDATE REFRESH_TOKEN
+       SET    RevokedAt  = NOW()
+       WHERE  TokenHash  = ?
+         AND  MaNhanVien = ?
+         AND  RevokedAt IS NULL`,
+      [hash, user.maNhanVien],
+    );
+
+    await this.writeAudit(
+      user.maNhanVien,
+      'LOGOUT',
+      'NHAN_VIEN',
+      user.maNhanVien,
+    );
+
+    return { message: 'Logged out successfully' };
   }
 
   async getProfile(user: AuthUser) {
@@ -104,6 +223,9 @@ export class AuthService {
       'UPDATE NHAN_VIEN SET MatKhau = ? WHERE MaNhanVien = ?',
       [hashedPassword, user.maNhanVien],
     );
+
+    // Revoke all refresh tokens after password change (security best practice)
+    await this.revokeAllTokens(user.maNhanVien);
 
     await this.writeAudit(
       user.maNhanVien,
@@ -177,7 +299,7 @@ export class AuthService {
       {
         secret: process.env.JWT_SECRET ?? 'quan-ly-tai-san-secret',
         expiresIn: (process.env.JWT_EXPIRES_IN ??
-          '8h') as SignOptions['expiresIn'],
+          '15m') as SignOptions['expiresIn'],
       },
     );
   }
@@ -187,7 +309,7 @@ export class AuthService {
       `SELECT nv.*, pb.TenPhongBan, vt.TenVaiTro
        FROM NHAN_VIEN nv
        LEFT JOIN PHONG_BAN pb ON pb.MaPhongBan = nv.MaPhongBan
-       LEFT JOIN VAI_TRO vt ON vt.MaVaiTro = nv.MaVaiTro
+       LEFT JOIN VAI_TRO   vt ON vt.MaVaiTro   = nv.MaVaiTro
        WHERE nv.MaNhanVien = ?
        LIMIT 1`,
       [id],
@@ -195,6 +317,52 @@ export class AuthService {
 
     return rows[0] ?? null;
   }
+
+  // ─── Token helpers ────────────────────────────────────────────────────────────
+
+  private async signRefreshToken(maNhanVien: string): Promise<string> {
+    return this.jwtService.signAsync(
+      { sub: maNhanVien, type: 'refresh' },
+      {
+        secret:
+          process.env.JWT_REFRESH_SECRET ??
+          'quan-ly-tai-san-refresh-secret',
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ??
+          '7d') as SignOptions['expiresIn'],
+      },
+    );
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async storeRefreshToken(
+    maNhanVien: string,
+    token: string,
+  ): Promise<void> {
+    const hash = this.hashToken(token);
+    const decoded = this.jwtService.decode(token) as { exp: number };
+    const expiresAt = new Date(decoded.exp * 1000);
+
+    await this.db.execute(
+      `INSERT INTO REFRESH_TOKEN (MaNhanVien, TokenHash, ExpiresAt)
+       VALUES (?, ?, ?)`,
+      [maNhanVien, hash, expiresAt],
+    );
+  }
+
+  private async revokeAllTokens(maNhanVien: string): Promise<void> {
+    await this.db.execute(
+      `UPDATE REFRESH_TOKEN
+       SET    RevokedAt  = NOW()
+       WHERE  MaNhanVien = ?
+         AND  RevokedAt IS NULL`,
+      [maNhanVien],
+    );
+  }
+
+  // ─── Private helpers ──────────────────────────────────────────────────────────
 
   private async ensureDepartmentExists(maPhongBan: string) {
     const [rows] = await this.db.execute<RowDataPacket[]>(
@@ -214,7 +382,7 @@ export class AuthService {
       `SELECT nv.*, pb.TenPhongBan, vt.TenVaiTro
        FROM NHAN_VIEN nv
        LEFT JOIN PHONG_BAN pb ON pb.MaPhongBan = nv.MaPhongBan
-       LEFT JOIN VAI_TRO vt ON vt.MaVaiTro = nv.MaVaiTro
+       LEFT JOIN VAI_TRO   vt ON vt.MaVaiTro   = nv.MaVaiTro
        WHERE nv.Email = ?
        LIMIT 1`,
       [email],
