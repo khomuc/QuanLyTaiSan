@@ -1,287 +1,57 @@
-# Hệ Thống Quản Lý Tài Sản QR — Báo Cáo Team Lead
+# 🗂️ Hệ Thống Quản Lý Tài Sản QR
 
-**Dự án:** Quản Lý Tài Sản QR (Asset Management System)  
-**Team Lead:** Nguyễn Thị Huỳnh Như — B2204960  
-**Repository:** https://github.com/khomuc/QuanLyTaiSan.git
+> **Asset Management System** — Quản lý tài sản tổ chức bằng mã QR, phân quyền RBAC, quy trình phê duyệt và kiểm kê tự động.
 
-**Cập nhật lần cuối:** 2025-06-01
-
----
-
-## Mục Lục
-
-1. [Thông Tin Team](#1-thông-tin-team)
-2. [Phạm Vi Công Việc Team Lead](#2-phạm-vi-công-việc-team-lead)
-3. [Tiến Độ Tổng Hợp](#3-tiến-độ-tổng-hợp)
-4. [Chi Tiết Các Tính Năng Đã Hoàn Thành](#4-chi-tiết-các-tính-năng-đã-hoàn-thành)
-5. [Công Việc Còn Lại](#5-công-việc-còn-lại)
-6. [Architecture & Tech Stack](#6-architecture--tech-stack)
-7. [Cấu Hình & Setup](#7-cấu-hình--setup)
-8. [Testing & Quality Assurance](#8-testing--quality-assurance)
-9. [Security & Performance](#9-security--performance)
-10. [Kế Hoạch Tiếp Theo](#10-kế-hoạch-tiếp-theo)
+**Repository:** https://github.com/khomuc/QuanLyTaiSan  
+**Branch đang phát triển:** `test`  
+**Cập nhật lần cuối:** 2025-06-08
 
 ---
 
-## 1. Thông Tin Team
+## 📋 Mục Lục
+
+1. [Giới Thiệu Dự Án](#1-giới-thiệu-dự-án)
+2. [Thông Tin Team](#2-thông-tin-team)
+3. [Tech Stack](#3-tech-stack)
+4. [Cấu Trúc Project](#4-cấu-trúc-project)
+5. [Hướng Dẫn Cài Đặt & Chạy](#5-hướng-dẫn-cài-đặt--chạy)
+6. [Cấu Hình Môi Trường](#6-cấu-hình-môi-trường)
+7. [Tính Năng Hệ Thống](#7-tính-năng-hệ-thống)
+8. [API Endpoints](#8-api-endpoints)
+9. [Kiểm Thử](#9-kiểm-thử)
+10. [Bảo Mật](#10-bảo-mật)
+11. [Tiến Độ Phát Triển](#11-tiến-độ-phát-triển)
+12. [Tài Liệu Liên Quan](#12-tài-liệu-liên-quan)
+
+---
+
+## 1. Giới Thiệu Dự Án
+
+Hệ thống **Quản Lý Tài Sản QR** là ứng dụng web full-stack giúp tổ chức:
+
+- **Quản lý tài sản** bằng mã QR — tạo, in, quét và tra cứu nhanh.
+- **Kiểm kê định kỳ** với QR scanning thực tế.
+- **Điều chuyển tài sản** giữa các phòng ban kèm ký duyệt.
+- **Phân quyền RBAC** — Admin / Manager / Accountant / Staff.
+- **Audit logging** toàn bộ hành động người dùng.
+- **Email notifications** cho các luồng phê duyệt.
+
+---
+
+## 2. Thông Tin Team
 
 | STT | Họ và Tên | MSSV | Vai Trò | Phạm Vi Công Việc |
 |:---:|-----------|:----:|---------|-------------------|
-| 1 | **Nguyễn Thị Huỳnh Như** | B2204960 | Team Lead | Auth, Permissions, Frontend Infrastructure, Dashboard, Profile |
+| 1 | **Nguyễn Thị Huỳnh Như** | B2204960 | Team Lead | Auth, RBAC, Frontend Infrastructure, Dashboard, Profile, Email |
 | 2 | Nguyễn Minh Khôi | B2204941 | Asset Management | Asset CRUD, Danh sách, Import/Export, QR Print, Báo cáo |
 | 3 | Đỗ Minh Mẫn | B2104812 | Inventory Management | Kiểm kê, QR Scanning, Tổng hợp, Báo cáo |
 | 4 | Nguyễn Phú Bình | B2204923 | Transfer Management | Điều chuyển tài sản, Ký duyệt, Báo cáo |
 
----
-
-## 2. Phạm Vi Công Việc Team Lead
-
-### Đã Hoàn Thành ✅
-
-| # | Tính Năng | Chi Tiết | Trạng Thái |
-|:-:|-----------|----------|:----------:|
-| 1 | Frontend Setup | React 19, Vite 6, TypeScript | ✅ 100% |
-| 2 | Authentication | Login, JWT (24h), Bcrypt | ✅ 100% |
-| 3 | Authorization | RBAC system, Permissions | ✅ 100% |
-| 4 | Dashboard | Statistics, pending approvals | ✅ 100% |
-| 5 | Profile Management | Update info, change password | ✅ 100% |
-| 6 | Employee Management | CRUD, search, filter, deactivate | ✅ 100% |
-| 7 | System Configuration | Settings, config management | ✅ 100% |
-| 8 | Audit Logging | Action tracking, history | ✅ 100% |
-| 9 | Approval Workflow | Sign/reject, notifications | ✅ 100% |
-| 10 | Email Service | SMTP / Gmail / SendGrid support | ✅ 85% |
-| 11 | Frontend Refactoring | React.lazy(), code splitting | ✅ 100% |
-
-### Đang Thực Hiện ⚠️
-
-| # | Tính Năng | Tiến Độ | Deadline |
-|:-:|-----------|:-------:|----------|
-| 1 | Test Email (Gmail / SendGrid) | 50% | Tuần 10 |
-| 2 | Test Cases (16 cases) | 30% | Tuần 11 |
-| 3 | Security Hardening | 40% | Tuần 11 |
-| 4 | CI/CD Pipeline | 40% | Tuần 11 |
+> **Liên hệ Team Lead:** [@nnhuwz03](https://github.com/nnhuwz03) — hoặc tạo issue trên GitHub.
 
 ---
 
-## 3. Tiến Độ Tổng Hợp
-
-| Hạng Mục | Tiến Độ | Trạng Thái |
-|----------|:-------:|:----------:|
-| Authentication & Authorization | 100% | ✅ |
-| Dashboard & Overview | 100% | ✅ |
-| Profile Management | 100% | ✅ |
-| Employee Management | 100% | ✅ |
-| System Configuration | 100% | ✅ |
-| Audit Logging | 100% | ✅ |
-| Approval Workflow | 100% | ✅ |
-| Frontend Refactoring | 100% | ✅ |
-| Email Notifications | 85% | ⚠️ |
-| Test Cases & Documentation | 40% | ⚠️ |
-| Security & Performance Audit | 40% | ⚠️ |
-| CI/CD Pipeline | 40% | ⚠️ |
-| **OVERALL TEAM LEAD** | **75%** | ⚠️ |
-
----
-
-## 4. Chi Tiết Các Tính Năng Đã Hoàn Thành
-
-### 4.1 Authentication & Authorization (100%)
-
-Các chức năng đã triển khai:
-
-- Login form với email + password
-- JWT token generation (24h expiration)
-- Bcrypt password hashing
-- Role-based access control (RBAC)
-- Permission validation system
-- JwtAuthGuard implementation
-- Logout functionality
-
-**Files liên quan:**
-
-```
-frontend/src/pages/LoginScreen.tsx
-src/auth/auth.controller.ts
-src/auth/auth.service.ts
-src/common/guards/jwt-auth.guard.ts
-```
-
----
-
-### 4.2 Dashboard (100%)
-
-Các chức năng đã triển khai:
-
-- Thống kê nhân viên (tổng số, theo trạng thái)
-- Thống kê tài sản (tổng số, theo trạng thái)
-- Hiển thị số lượng phê duyệt đang chờ
-- Audit logs gần đây
-- Quick stats cards
-
-**File:** `frontend/src/pages/DashboardPage.tsx`
-
----
-
-### 4.3 Profile Management (100%)
-
-Các chức năng đã triển khai:
-
-- Xem thông tin cá nhân
-- Chỉnh sửa: Họ tên, Chức vụ, Số điện thoại, Phòng ban
-- Đổi mật khẩu
-- Form validation
-- Detect changes (bật/tắt nút Lưu)
-- Error handling & toast notifications
-
-**File:** `frontend/src/pages/ProfilePage.tsx`
-
----
-
-### 4.4 Employee Management (100%)
-
-Các chức năng đã triển khai:
-
-- Danh sách nhân viên (search, filter, pagination)
-- Tạo nhân viên mới (modal)
-- Chỉnh sửa thông tin nhân viên (modal)
-- Vô hiệu hóa nhân viên (soft delete)
-- Hiển thị trạng thái ACTIVE / INACTIVE
-
-**File:** `frontend/src/pages/EmployeesPage.tsx`
-
----
-
-### 4.5 System Configuration (100%)
-
-Các chức năng đã triển khai:
-
-- Cài đặt tên ứng dụng
-- Cấu hình JWT expiration
-- Bật/tắt email notifications
-- Bật/tắt in-app notifications
-- Lưu cấu hình hệ thống
-
-**File:** `frontend/src/pages/SettingsPage.tsx`
-
----
-
-### 4.6 Audit Logging (100%)
-
-Các chức năng đã triển khai:
-
-- Ghi lại toàn bộ hành động người dùng
-- Timestamp cho mỗi hành động
-- Xác định người thực hiện
-- Loại tài nguyên & ID
-- Chi tiết hành động & địa chỉ IP
-- Tìm kiếm & lọc audit logs
-
-**Files liên quan:**
-
-```
-frontend/src/pages/AuditPage.tsx
-src/audit-logs/
-```
-
----
-
-### 4.7 Approval Workflow (100%)
-
-Các chức năng đã triển khai:
-
-- Hiển thị danh sách chờ phê duyệt
-- Nút Ký duyệt / Từ chối
-- Gửi email thông báo khi có phê duyệt
-- Ghi log các hành động phê duyệt
-- Theo dõi trạng thái quy trình
-
-**File:** `frontend/src/pages/ApprovalsPage.tsx`
-
----
-
-### 4.8 Email Notifications (85%)
-
-Các chức năng đã triển khai:
-
-- Hỗ trợ cấu hình SMTP
-- Tích hợp Gmail
-- Tích hợp SendGrid
-- Template email nhắc nhở phê duyệt
-- Template email thông báo phê duyệt
-- *(Còn lại: Test thực tế với Gmail/SendGrid)*
-
-**File:** `src/mailer/mailer.service.ts`
-
----
-
-### 4.9 Frontend Refactoring (100%)
-
-Các chức năng đã triển khai:
-
-- Tách 10 page components từ App.tsx
-- React.lazy() cho tất cả các trang
-- Suspense boundaries
-- Code splitting theo routes
-- App.tsx giảm từ 1600+ xuống ~200 dòng
-- useMemo() cho filters/search
-
-**Danh sách page components:**
-
-```
-DashboardPage, EmployeesPage, AssetsPage, RolesPage,
-ApprovalsPage, NotificationsPage, SettingsPage,
-AuditPage, ProfilePage, LoginScreen
-```
-
----
-
-## 5. Công Việc Còn Lại
-
-### Priority 1 — Email Testing (Tuần 10)
-
-1. Tạo Gmail App Password
-2. Test gửi email
-3. Kiểm tra email templates
-4. Test approval notifications
-5. Verify đường link trong email
-
-### Priority 2 — Test Cases (Tuần 11)
-
-File output: `docs/TEST_CASES.md`
-
-| Nhóm | Test Cases | Số Lượng |
-|------|-----------|:--------:|
-| RBAC access control | TC-001 → TC-003 | 3 |
-| Profile update & password | TC-004 → TC-007 | 4 |
-| Email notifications | TC-008 → TC-009 | 2 |
-| Employee management | TC-010 → TC-012 | 3 |
-| Asset filtering | TC-013 | 1 |
-| Approval workflow | TC-014 → TC-015 | 2 |
-| Audit logging | TC-016 | 1 |
-| **Tổng** | | **16** |
-
-### Priority 3 — Security Hardening (Tuần 11)
-
-File output: `docs/SECURITY_AUDIT.md`
-
-- Implement rate limiting (`@nestjs/throttler`)
-- Thêm security headers
-- Implement refresh token flow
-- Cấu hình CORS đúng chuẩn
-- Tối ưu database indexes
-
-### Priority 4 — CI/CD Pipeline (Tuần 11)
-
-File output: `.github/workflows/ci.yml`
-
-- Tự động hóa build & test
-- Lint checks
-- Security scanning
-- Auto-deploy lên dev/prod
-
----
-
-## 6. Architecture & Tech Stack
+## 3. Tech Stack
 
 ### Frontend
 
@@ -289,138 +59,291 @@ File output: `.github/workflows/ci.yml`
 |-----------|:---------:|---------|
 | React | 19.0.0 | UI Framework |
 | TypeScript | 5.7.3 | Type safety |
-| Vite | 6.0.0 | Build tool |
-| Lucide React | — | Icons & UI |
+| Vite | 6.0.0 | Build tool & Dev server |
+| React Router DOM | 6.20.0 | Routing |
+| Lucide React | 0.468.0 | Icons |
 
 ### Backend
 
 | Công nghệ | Phiên bản | Mục đích |
 |-----------|:---------:|---------|
-| NestJS | 11.0.1 | Framework |
+| NestJS | 11.0.1 | Backend Framework |
 | TypeORM | 0.3.29 | ORM |
-| MySQL2 | 3.22.3 | Database |
-| Bcryptjs | 3.0.3 | Password hashing |
-| Nodemailer | 8.0.10 | Email service |
-| JWT | 11.0.2 | Authentication |
+| MySQL2 | 3.22.3 | Cơ sở dữ liệu |
+| @nestjs/jwt | 11.0.2 | JSON Web Token |
+| Bcryptjs | 3.0.3 | Mã hóa mật khẩu |
+| Nodemailer | 8.0.10 | Gửi email |
+| class-validator | 0.15.1 | Validation DTO |
 
-### Cấu Trúc Project
+---
+
+## 4. Cấu Trúc Project
 
 ```
 QuanLyTaiSan/
-├── frontend/
+├── frontend/                    ← React + Vite frontend
 │   └── src/
-│       ├── pages/          ← 10 page components
-│       ├── components/     ← Shared components
-│       ├── lib/            ← API, types, utilities
-│       ├── styles/         ← CSS
-│       ├── App.tsx         ← ~200 dòng
+│       ├── pages/               ← 10 page components (lazy-loaded)
+│       │   ├── LoginScreen.tsx
+│       │   ├── DashboardPage.tsx
+│       │   ├── EmployeesPage.tsx
+│       │   ├── AssetsPage.tsx
+│       │   ├── RolesPage.tsx
+│       │   ├── ApprovalsPage.tsx
+│       │   ├── NotificationsPage.tsx
+│       │   ├── SettingsPage.tsx
+│       │   ├── AuditPage.tsx
+│       │   └── ProfilePage.tsx
+│       ├── components/          ← Shared UI components
+│       ├── lib/                 ← API client, types, utilities
+│       ├── styles/              ← CSS
+│       ├── App.tsx              ← Route definitions (~200 dòng)
 │       └── main.tsx
 │
-├── src/                    ← NestJS backend
-│   ├── auth/               ← JWT, Bcrypt
-│   ├── employees/          ← Employee CRUD
-│   ├── roles/              ← RBAC
-│   ├── dashboard/          ← Statistics
-│   ├── audit-logs/         ← Action tracking
-│   ├── notifications/      ← Email + alerts
-│   ├── approvals/          ← Workflow
-│   ├── mailer/             ← Email service
-│   ├── common/             ← Guards, decorators
+├── src/                         ← NestJS backend
+│   ├── auth/                    ← Login, JWT, Bcrypt
+│   ├── employees/               ← Employee CRUD & quản lý
+│   ├── roles/                   ← RBAC & permissions
+│   ├── dashboard/               ← Thống kê tổng quan
+│   ├── audit-logs/              ← Ghi lịch sử hành động
+│   ├── notifications/           ← Email + in-app alerts
+│   ├── approvals/               ← Workflow phê duyệt
+│   ├── mailer/                  ← Email service (SMTP/Gmail/SendGrid)
+│   ├── common/                  ← Guards, decorators, interceptors
 │   └── main.ts
 │
 ├── docs/
-│   ├── TEST_CASES.md
-│   └── SECURITY_AUDIT.md
+│   ├── LOGIN_GUIDE.md           ← Hướng dẫn đăng nhập & phân quyền
+│   └── TEST_CASES.md            ← 16 test cases
 │
-├── TEAM_ASSIGNMENTS.md
-├── README.md
-├── .env.example
-└── package.json
+├── .env.example                 ← Template cấu hình môi trường
+├── package.json                 ← Backend dependencies & scripts
+└── README.md
 ```
 
 ---
 
-## 7. Cấu Hình & Setup
+## 5. Hướng Dẫn Cài Đặt & Chạy
 
 ### Yêu Cầu Hệ Thống
 
-- Node.js 18+
-- MySQL 8.0+
-- Git
+- **Node.js** 18 trở lên
+- **MySQL** 8.0 trở lên
+- **Git**
 
-### Hướng Dẫn Chạy Nhanh
+### Bước 1 — Clone & Checkout Branch
 
 ```bash
-# 1. Clone & checkout
 git clone https://github.com/khomuc/QuanLyTaiSan.git
 cd QuanLyTaiSan
 git checkout test
-
-# 2. Cấu hình môi trường
-cp .env.example .env
-# Chỉnh sửa .env với thông tin của bạn
-
-# 3. Cài đặt dependencies
-npm install
-npm install --prefix frontend
-
-# 4. Khởi tạo database
-mysql -u root -p
-# Sau khi đăng nhập MySQL:
-CREATE DATABASE quan_ly_tai_san;
-
-# 5. Chạy development
-npm run start:dev                   # Terminal 1: Backend (port 3000)
-npm run frontend:dev --prefix .     # Terminal 2: Frontend (port 5173)
 ```
 
-### Cấu Hình `.env`
+### Bước 2 — Cấu Hình Môi Trường
+
+```bash
+cp .env.example .env
+# Mở file .env và điền thông tin thực tế của bạn
+```
+
+Xem chi tiết các biến cần thiết ở [mục 6](#6-cấu-hình-môi-trường).
+
+### Bước 3 — Cài Đặt Dependencies
+
+```bash
+# Backend
+npm install
+
+# Frontend
+npm install --prefix frontend
+```
+
+### Bước 4 — Khởi Tạo Database
+
+```bash
+mysql -u root -p
+```
+
+Sau khi đăng nhập MySQL:
+
+```sql
+CREATE DATABASE quan_ly_tai_san CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+TypeORM sẽ tự tạo bảng khi ứng dụng khởi động lần đầu (`synchronize: true` trong dev mode).
+
+### Bước 5 — Chạy Development
+
+Mở **hai terminal** song song:
+
+```bash
+# Terminal 1 — Backend (http://localhost:3000)
+npm run start:dev
+
+# Terminal 2 — Frontend (http://localhost:5173)
+npm run frontend:dev
+```
+
+### Chạy Production
+
+```bash
+# Build backend
+npm run build
+npm run start:prod
+
+# Build frontend
+npm run frontend:build
+```
+
+---
+
+## 6. Cấu Hình Môi Trường
+
+File `.env` (tạo từ `.env.example`):
 
 ```env
-# Database
+# ── Database ─────────────────────────────────
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=password
+DB_PASSWORD=your_password
 DB_NAME=quan_ly_tai_san
 
-# JWT
-JWT_SECRET=your-secret-key-32-chars-minimum
+# ── JWT ──────────────────────────────────────
+JWT_SECRET=your-secret-key-at-least-32-characters
 JWT_EXPIRES_IN=24h
 
-# Email — chọn một trong hai
-# Option 1: Gmail
-MAIL_PROVIDER=gmail
-GMAIL_USER=your-email@gmail.com
-GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+# ── Email — chọn một trong các provider ──────
+MAIL_PROVIDER=smtp          # smtp | gmail | sendgrid
+MAIL_FROM=noreply@quanlytaisan.local
 
-# Option 2: SendGrid
+# Option 1: SMTP chung
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_SECURE=false
+MAIL_USER=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Option 2: Gmail (App Password)
+# MAIL_PROVIDER=gmail
+# GMAIL_USER=your-email@gmail.com
+# GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+
+# Option 3: SendGrid
 # MAIL_PROVIDER=sendgrid
 # SENDGRID_API_KEY=SG.xxxxx...
 
-# App
+# ── App ──────────────────────────────────────
 FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
 PORT=3000
 ```
 
+> **Tạo Gmail App Password:** Tài khoản Google → Bảo mật → Xác minh 2 bước → App Passwords.
+
 ---
 
-## 8. Testing & Quality Assurance
+## 7. Tính Năng Hệ Thống
 
-### Tổng Quan Test Cases (16 Cases)
+### Authentication & Authorization
 
-| Nhóm | Số Cases | Trạng Thái |
-|------|:--------:|:----------:|
-| RBAC | 3 | ⏳ Pending |
-| Profile | 4 | ⏳ Pending |
-| Email | 2 | ⏳ Pending |
-| Employees | 3 | ⏳ Pending |
-| Assets | 1 | ⏳ Pending |
-| Approvals | 2 | ⏳ Pending |
-| Audit | 1 | ⏳ Pending |
+- Đăng nhập bằng email + mật khẩu.
+- JWT token có thời hạn 24 giờ, lưu trong `localStorage`.
+- Mật khẩu được mã hóa bằng Bcrypt.
+- RBAC với 4 vai trò: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `STAFF`.
+- `JwtAuthGuard` bảo vệ toàn bộ API endpoints.
+- Hỗ trợ **Permission Override** — Admin cấp quyền tạm thời cho nhân viên.
 
-### Chạy Tests
+### Dashboard
+
+- Thống kê tổng số nhân viên, tài sản theo trạng thái.
+- Số lượng phê duyệt đang chờ xử lý.
+- Audit logs hoạt động gần đây.
+- Quick stats cards theo vai trò người dùng.
+
+### Quản Lý Nhân Viên
+
+- Danh sách có tìm kiếm, lọc theo phòng ban / vai trò / trạng thái.
+- Tạo, chỉnh sửa thông tin nhân viên qua modal.
+- Vô hiệu hóa tài khoản (soft delete — không xóa dữ liệu).
+- Cấp quyền hạn ghi đè (Permission Override) trực tiếp từ trang quản lý.
+
+### Quản Lý Tài Sản *(thành viên Nguyễn Minh Khôi)*
+
+- CRUD tài sản đầy đủ.
+- Sinh mã QR và in nhãn.
+- Import/Export danh sách tài sản.
+- Lọc và tìm kiếm nâng cao.
+- Báo cáo tài sản theo phòng ban / trạng thái.
+
+### Kiểm Kê *(thành viên Đỗ Minh Mẫn)*
+
+- Tạo phiếu kiểm kê định kỳ.
+- Quét QR bằng camera để xác nhận tài sản.
+- Tổng hợp kết quả kiểm kê.
+- Báo cáo chênh lệch.
+
+### Điều Chuyển Tài Sản *(thành viên Nguyễn Phú Bình)*
+
+- Lập phiếu điều chuyển giữa các phòng ban.
+- Quy trình ký duyệt nhiều cấp.
+- Báo cáo lịch sử điều chuyển.
+
+### Phê Duyệt & Thông Báo
+
+- Danh sách chờ phê duyệt tập trung.
+- Ký duyệt / Từ chối kèm ghi chú.
+- Gửi email thông báo tự động khi có phê duyệt mới.
+- In-app notifications realtime.
+
+### Audit Logging
+
+- Ghi lại toàn bộ hành động: ai, làm gì, khi nào, từ IP nào.
+- Tìm kiếm và lọc lịch sử theo loại tài nguyên, người dùng, thời gian.
+
+### Cấu Hình Hệ Thống *(Admin only)*
+
+- Đặt tên ứng dụng.
+- Cấu hình thời hạn JWT.
+- Bật/tắt email và in-app notifications.
+
+---
+
+## 8. API Endpoints
+
+Base URL: `http://localhost:3000/api`
+
+### Auth
+
+```http
+POST   /auth/login            Đăng nhập → trả về { token, user }
+GET    /auth/me               Lấy thông tin user hiện tại
+PATCH  /auth/password         Đổi mật khẩu
+POST   /auth/reset-password   Reset mật khẩu qua email (sắp có)
+POST   /auth/refresh          Làm mới token (sắp có)
+```
+
+### Employees
+
+```http
+GET    /employees             Danh sách nhân viên (hỗ trợ ?search, ?maPhongBan, ?maVaiTro)
+GET    /employees/meta/departments   Danh sách phòng ban
+POST   /employees             Tạo nhân viên mới
+PATCH  /employees/:maNhanVien Cập nhật thông tin
+DELETE /employees/:maNhanVien Vô hiệu hóa tài khoản
+```
+
+### Tất cả endpoints yêu cầu header:
+
+```http
+Authorization: Bearer <jwt_token>
+```
+
+---
+
+## 9. Kiểm Thử
+
+### Chạy Test
 
 ```bash
 npm run test          # Unit tests
@@ -428,75 +351,87 @@ npm run test:cov      # Coverage report
 npm run test:e2e      # E2E tests
 ```
 
-### Tài Khoản Test Mặc Định
+### Tài Khoản Test Sẵn Có
 
-| Trường | Giá Trị |
-|--------|---------|
-| Email | admin@example.com |
-| Password | 123456 |
-| Token | demo-token |
+| Email | Mật khẩu | Vai trò | Quyền hạn |
+|-------|----------|---------|-----------|
+| admin@example.com | 123456 | ADMIN | Toàn quyền |
+| manager@example.com | 123456 | MANAGER | Quản lý phòng ban |
+| accountant@example.com | 123456 | ACCOUNTANT | Xem & báo cáo tài sản |
+| staff@example.com | 123456 | STAFF | Nhân viên cơ bản |
+
+> Xem chi tiết 16 test cases tại [`docs/TEST_CASES.md`](docs/TEST_CASES.md).
 
 ---
 
-## 9. Security & Performance
+## 10. Bảo Mật
 
-### Đánh Giá Bảo Mật: 84/100 *(Moderate)*
+### Đã Triển Khai ✅
 
-**Đã triển khai ✅**
+| Hạng Mục | Chi Tiết |
+|----------|---------|
+| Bcrypt password hashing | Salt rounds mặc định |
+| JWT authentication | RS256 / HS256, 24h expiry |
+| RBAC system | Guard + Decorator trên mọi endpoint |
+| SQL injection prevention | TypeORM parameterized queries |
+| XSS protection | Input validation với class-validator |
+| Input sanitization | DTO validation toàn bộ request body |
 
-| Hạng Mục | Trạng Thái |
-|----------|:----------:|
-| Bcrypt password hashing | ✅ Safe |
-| JWT authentication | ✅ Safe |
-| RBAC system | ✅ Safe |
-| SQL injection prevention | ✅ Safe |
-| XSS protection | ✅ Safe |
-| Input validation | ✅ Safe |
+### Cần Bổ Sung ⚠️
 
-**Cần bổ sung ⚠️**
-
-| Hạng Mục | Mức Độ Ưu Tiên |
-|----------|:--------------:|
-| Rate limiting | 🔴 Cao |
-| Security headers | 🔴 Cao |
+| Hạng Mục | Ưu tiên |
+|----------|:-------:|
+| Rate limiting (`@nestjs/throttler`) | 🔴 Cao |
+| Security headers (Helmet) | 🔴 Cao |
 | Refresh token flow | 🔴 Cao |
-| CORS configuration | 🟡 Trung bình |
+| CORS configuration chính xác | 🟡 Trung bình |
+| Database indexes tối ưu | 🟡 Trung bình |
 
-### Hiệu Năng ✅
-
-- Tất cả API phản hồi < 500ms
-- Frontend bundle ~150KB
-- Code splitting đã triển khai
-- Lazy loading đã bật
-
-> Xem chi tiết: `docs/SECURITY_AUDIT.md`
+> **Đánh giá bảo mật hiện tại: 84/100** — Xem chi tiết tại `docs/SECURITY_AUDIT.md`.
 
 ---
 
-## 10. Kế Hoạch Tiếp Theo
+## 11. Tiến Độ Phát Triển
 
-| Giai Đoạn | Công Việc |
-|-----------|----------|
-| **Tuần 10** | Setup & test email service, hoàn thiện refactoring |
-| **Tuần 11** | Thực thi 16 test cases, fix security, setup CI/CD, tối ưu hiệu năng |
-| **Tuần 12–13** | Integration testing với các thành viên, QA, fix bugs, hoàn thiện tài liệu |
-| **Tuần 14–15** | User acceptance testing, chuẩn bị deployment, go-live |
+### Team Lead (Nguyễn Thị Huỳnh Như)
+
+| Tính Năng | Tiến Độ |
+|-----------|:-------:|
+| Frontend Setup (React 19 + Vite 6 + TypeScript) | ✅ 100% |
+| Authentication & JWT | ✅ 100% |
+| RBAC & Permissions | ✅ 100% |
+| Dashboard | ✅ 100% |
+| Profile Management | ✅ 100% |
+| Employee Management | ✅ 100% |
+| System Configuration | ✅ 100% |
+| Audit Logging | ✅ 100% |
+| Approval Workflow | ✅ 100% |
+| Frontend Refactoring (code splitting, lazy load) | ✅ 100% |
+| Email Service (SMTP/Gmail/SendGrid) | ⚠️ 85% |
+| Test Cases (16 cases) | ⚠️ 30% |
+| Security Hardening | ⚠️ 40% |
+| CI/CD Pipeline | ⚠️ 40% |
+| **OVERALL** | **⚠️ ~75%** |
+
+### Hiệu Năng Frontend
+
+- Bundle size: ~150 KB (sau code splitting)
+- Tất cả API phản hồi < 500 ms
+- React.lazy() + Suspense cho mọi trang
+- useMemo() cho filter/search nặng
 
 ---
 
-## Tóm Tắt Trạng Thái
+## 12. Tài Liệu Liên Quan
 
-| Hạng Mục | Trạng Thái | Tiến Độ |
-|----------|:----------:|:-------:|
-| Frontend Implementation | ✅ Hoàn thành | 100% |
-| Backend Implementation | ✅ Hoàn thành | 95% |
-| Documentation | ⚠️ Đang thực hiện | 40% |
-| Testing | ⚠️ Đang thực hiện | 30% |
-| Deployment | ⏳ Chưa bắt đầu | 0% |
-| **Overall** | ⚠️ In Development | **75%** |
+| Tài liệu | Mô tả |
+|----------|-------|
+| [`docs/LOGIN_GUIDE.md`](docs/LOGIN_GUIDE.md) | Hướng dẫn đăng nhập, phân quyền, troubleshooting |
+| [`docs/TEST_CASES.md`](docs/TEST_CASES.md) | 16 test cases theo nhóm chức năng |
+| [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) | Đánh giá bảo mật chi tiết |
+| [`.env.example`](.env.example) | Template cấu hình môi trường |
 
 ---
 
-*Maintained by: Nguyễn Thị Huỳnh Như (nnhuwz03) — Team Lead*  
-*GitHub: https://github.com/nnhuwz03*  
-*Mọi câu hỏi vui lòng tạo issue trên GitHub hoặc liên hệ trực tiếp Team Lead.*
+*Maintained by: **Nguyễn Thị Huỳnh Như** ([@nnhuwz03](https://github.com/nnhuwz03)) — Team Lead*  
+*Mọi câu hỏi vui lòng tạo Issue trên GitHub.*
