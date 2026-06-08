@@ -1,14 +1,14 @@
 import { Menu, RefreshCw, User, LogOut } from 'lucide-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Sidebar, type NavItem } from './Sidebar';
 import type { AuthUser } from '../lib/types';
-import { getVisibleNavItems } from '../lib/navigation';
 
 interface AppLayoutProps {
   user: AuthUser | null;
   apiMode: 'api' | 'demo';
   loading: boolean;
+  navItems: NavItem[];
   onLogout: () => void;
   onReload: () => void;
 }
@@ -17,6 +17,7 @@ const routeToKeyMap: Record<string, string> = {
   '/dashboard': 'dashboard',
   '/assets': 'assets',
   '/employees': 'employees',
+  '/staff-management': 'staff-management',
   '/roles': 'roles',
   '/approvals': 'approvals',
   '/notifications': 'notifications',
@@ -29,21 +30,19 @@ export function AppLayout({
   user,
   apiMode,
   loading,
+  navItems,
   onLogout,
   onReload,
 }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-
-  const visibleNavItems = useMemo(
-    () => (user ? getVisibleNavItems(user) : []),
-    [user],
-  );
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
 
   const currentView = routeToKeyMap[location.pathname] || 'dashboard';
-  const currentViewLabel = visibleNavItems.find((item) => item.key === currentView)?.label || 'Dashboard';
+  const currentViewLabel = navItems.find((item) => item.key === currentView)?.label || 'Dashboard';
 
   React.useEffect(() => {
     function closeSidebarWithEscape(event: KeyboardEvent) {
@@ -52,19 +51,36 @@ export function AppLayout({
       }
     }
 
-    function handleResize() {
-      if (window.innerWidth > 768 && sidebarOpen) {
+    function closeSidebarOnDesktop() {
+      if (window.innerWidth > 768) {
         setSidebarOpen(false);
       }
     }
 
     window.addEventListener('keydown', closeSidebarWithEscape);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', closeSidebarOnDesktop);
     return () => {
       window.removeEventListener('keydown', closeSidebarWithEscape);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', closeSidebarOnDesktop);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (sidebarOpen) {
+      document.body.classList.add('no-scroll-mobile');
+    } else {
+      document.body.classList.remove('no-scroll-mobile');
+    }
+
+    return () => {
+      document.body.classList.remove('no-scroll-mobile');
     };
   }, [sidebarOpen]);
+
+  const handleToggleCollapse = (value: boolean) => {
+    setSidebarCollapsed(value);
+    localStorage.setItem('sidebar-collapsed', String(value));
+  };
 
   const handleNavigate = (path: string) => {
     navigate(`/${path}`);
@@ -77,31 +93,39 @@ export function AppLayout({
         sidebarOpen ? 'sidebar-open-mobile' : ''
       }`}
     >
+      {sidebarOpen && (
+        <button
+          aria-label="Đóng menu"
+          className="sidebar-backdrop mobile-only"
+          onClick={() => setSidebarOpen(false)}
+          type="button"
+        />
+      )}
+
       <Sidebar
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}
-        navItems={visibleNavItems}
+        navItems={navItems}
         currentView={currentView}
-        user={user}
         onNavigate={handleNavigate}
         onToggleSidebar={setSidebarOpen}
-        onToggleCollapse={setSidebarCollapsed}
+        onToggleCollapse={handleToggleCollapse}
       />
 
       <div className="workspace">
         <header className="topbar">
           <button
             aria-expanded={sidebarOpen}
-            aria-label={sidebarOpen ? 'Dong menu' : 'Mo menu'}
+            aria-label={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
             className="icon-button mobile-only"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? 'Dong menu' : 'Mo menu'}
+            title={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
             type="button"
           >
             <Menu size={20} />
           </button>
           <div>
-            <p className="eyebrow">Phan he System Lead</p>
+            <p className="eyebrow">Phân hệ System Lead</p>
             <h1>{currentViewLabel}</h1>
           </div>
           <div className="topbar-actions">
@@ -109,10 +133,11 @@ export function AppLayout({
               {apiMode.toUpperCase()}
             </span>
             <button
-              className="icon-button"
+              className={`icon-button ${loading ? 'is-loading' : ''}`}
               onClick={onReload}
-              title="Tai lai"
+              title="Tải lại"
               type="button"
+              disabled={loading}
             >
               <RefreshCw size={18} />
             </button>
@@ -120,6 +145,7 @@ export function AppLayout({
               className="profile-button"
               onClick={() => handleNavigate('profile')}
               type="button"
+              title="Thông tin cá nhân"
             >
               <span>{user?.hoTen}</span>
               <User size={18} />
@@ -127,7 +153,7 @@ export function AppLayout({
             <button
               className="icon-button danger"
               onClick={onLogout}
-              title="Dang xuat"
+              title="Đăng xuất"
               type="button"
             >
               <LogOut size={18} />
@@ -141,7 +167,7 @@ export function AppLayout({
         </main>
 
         <footer className="footer">
-          <span>Quan ly tai san QR</span>
+          <span>Quản lý tài sản QR</span>
           <span>Nguyen Thi Huynh Nhu - B2204960</span>
         </footer>
       </div>
