@@ -67,15 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<LoginResult> => {
     const result = await api.login(email, password);
-    setStoredToken(result.token || result.accessToken || '');
-    setToken(result.token || result.accessToken || '');
+    setStoredToken(result.accessToken || '');
+    setToken(result.accessToken || '');
     setUser(result.user);
     return result;
   };
 
   const loginSuccess = (result: LoginResult) => {
-    setStoredToken(result.token || result.accessToken || '');
-    setToken(result.token || result.accessToken || '');
+    setStoredToken(result.accessToken || '');
+    setToken(result.accessToken || '');
     setUser(result.user);
   };
 
