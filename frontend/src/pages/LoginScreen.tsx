@@ -2,12 +2,12 @@ import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import * as demo from '../lib/mockData';
-import type { AuthUser } from '../lib/types';
+import type { LoginResult } from '../lib/types';
 
 export default function LoginScreen({
   onSuccess,
 }: {
-  onSuccess: (result: { token: string; user: AuthUser }) => void;
+  onSuccess: (result: LoginResult) => void;
 }) {
   const [email, setEmail] = useState('hieutruong@ctu.edu.vn');
   const [password, setPassword] = useState('123456');
@@ -22,7 +22,7 @@ export default function LoginScreen({
 
     try {
       const result = await api.login(email, password);
-      onSuccess({ token: result.accessToken, user: result.user });
+      onSuccess(result);
     } catch {
       setError('Khong dang nhap duoc API hien tai');
     } finally {
@@ -77,7 +77,7 @@ export default function LoginScreen({
           </button>
           <button
             className="secondary-button"
-            onClick={() => onSuccess({ token: 'demo-token', user: demo.demoUser })}
+            onClick={() => onSuccess({ accessToken: 'demo-token', tokenType: 'Bearer', user: demo.demoUser })}
             type="button"
           >
             Mo giao dien demo
