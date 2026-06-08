@@ -42,7 +42,7 @@ const allNavItems: NavItem[] = [
     key: 'staff-management',
     label: 'Quản lý nhân viên',
     icon: Users,
-    requiredPermissions: ['STAFF_MANAGE'],
+    requiredPermissions: ['STAFF_MANAGE', 'ROLE_MANAGE'],
   },
   {
     key: 'roles',

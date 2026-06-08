@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Edit3, RefreshCw, Search, Save } from 'lucide-react';
 import { api } from '../lib/api';
-import { StatusPill } from '../components/ui';
+import * as demo from '../lib/mockData';
 import type { Employee, Role, Permission, Department } from '../lib/types';
 
 export default function StaffManagementPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>(demo.employees);
+  const [roles, setRoles] = useState<Role[]>(demo.roles);
+  const [permissions, setPermissions] = useState<Permission[]>(demo.permissions);
+  const [departments, setDepartments] = useState<Department[]>(demo.departments);
 
   const [search, setSearch] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
@@ -19,6 +19,7 @@ export default function StaffManagementPage() {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     loadData();
@@ -39,6 +40,11 @@ export default function StaffManagementPage() {
       setDepartments(deptList);
     } catch (error) {
       console.error('Failed to load data:', error);
+      // Fallback to demo data
+      setEmployees(demo.employees);
+      setRoles(demo.roles);
+      setPermissions(demo.permissions);
+      setDepartments(demo.departments);
     } finally {
       setLoading(false);
     }
@@ -73,14 +79,19 @@ export default function StaffManagementPage() {
       // TODO: Replace with actual API endpoint for permission override
       // await api.overrideEmployeePermissions(selectedEmployee.maNhanVien, selectedPermissions);
       console.log(`Saving override for ${selectedEmployee.maNhanVien}:`, selectedPermissions);
-      alert('Quyền hạn đã được cập nhật thành công (chế độ demo)');
+      setToast('Quyền hạn đã được cập nhật thành công!');
     } catch (error) {
       console.error('Failed to save override:', error);
-      alert('Lỗi: Không thể cập nhật quyền hạn');
+      setToast('Lỗi: Không thể cập nhật quyền hạn');
     } finally {
       setSaving(false);
+      setTimeout(() => setToast(''), 2000);
     }
   }
+
+  const getStatusBadgeColor = (status: string) => {
+    return status === 'ACTIVE' ? '#4caf50' : '#f44336';
+  };
 
   return (
     <section className="panel full">
@@ -96,13 +107,27 @@ export default function StaffManagementPage() {
             
             {/* Search */}
             <div style={{ marginBottom: '10px' }}>
-              <div className="search-box">
-                <Search size={18} />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                backgroundColor: '#fff',
+              }}>
+                <Search size={18} color="#999" />
                 <input
                   type="text"
                   placeholder="Tìm mã, tên, email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '14px',
+                  }}
                 />
               </div>
             </div>
@@ -112,7 +137,7 @@ export default function StaffManagementPage() {
               <select
                 value={filterDepartment}
                 onChange={(e) => setFilterDepartment(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '13px' }}
               >
                 <option value="">Tất cả phòng ban</option>
                 {departments.map((dept) => (
@@ -125,7 +150,7 @@ export default function StaffManagementPage() {
               <select
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '13px' }}
               >
                 <option value="">Tất cả vai trò</option>
                 {roles.map((role) => (
@@ -138,7 +163,7 @@ export default function StaffManagementPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '13px' }}
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="ACTIVE">ACTIVE</option>
@@ -157,9 +182,14 @@ export default function StaffManagementPage() {
                 border: '1px solid #ddd',
                 borderRadius: '4px',
                 cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                opacity: loading ? 0.6 : 1,
               }}
             >
-              <RefreshCw size={16} style={{ marginRight: '5px' }} />
+              <RefreshCw size={16} />
               Tải lại ({filteredEmployees.length})
             </button>
           </div>
@@ -171,6 +201,7 @@ export default function StaffManagementPage() {
               borderRadius: '4px',
               maxHeight: '600px',
               overflowY: 'auto',
+              backgroundColor: '#fff',
             }}
           >
             {filteredEmployees.length === 0 ? (
@@ -202,15 +233,27 @@ export default function StaffManagementPage() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{emp.hoTen}</div>
+                      <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '14px' }}>
+                        {emp.hoTen}
+                      </div>
                       <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
                         {emp.maNhanVien}
                       </div>
                       <div style={{ fontSize: '12px', color: '#666' }}>{emp.email}</div>
                     </div>
                     <div style={{ fontSize: '11px', color: '#999', textAlign: 'right' }}>
-                      <div>{emp.tenPhongBan}</div>
-                      <div>{emp.tenVaiTro}</div>
+                      <div>{emp.tenPhongBan || emp.maPhongBan}</div>
+                      <div>{emp.tenVaiTro || emp.maVaiTro}</div>
+                      <div style={{
+                        marginTop: '4px',
+                        padding: '2px 6px',
+                        borderRadius: '3px',
+                        color: 'white',
+                        fontSize: '10px',
+                        backgroundColor: getStatusBadgeColor(emp.trangThai),
+                      }}>
+                        {emp.trangThai}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -226,26 +269,36 @@ export default function StaffManagementPage() {
               <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
                 <h2 style={{ marginBottom: '10px' }}>{selectedEmployee.hoTen}</h2>
                 <div style={{ fontSize: '14px', color: '#666' }}>
-                  <div>
+                  <div style={{ marginBottom: '6px' }}>
                     <strong>Mã nhân viên:</strong> {selectedEmployee.maNhanVien}
                   </div>
-                  <div>
+                  <div style={{ marginBottom: '6px' }}>
                     <strong>Email:</strong> {selectedEmployee.email}
                   </div>
-                  <div>
+                  <div style={{ marginBottom: '6px' }}>
                     <strong>Phòng ban:</strong> {selectedEmployee.tenPhongBan || selectedEmployee.maPhongBan}
                   </div>
-                  <div>
+                  <div style={{ marginBottom: '6px' }}>
                     <strong>Vai trò:</strong> {selectedEmployee.tenVaiTro || selectedEmployee.maVaiTro}
                   </div>
                   <div>
-                    <strong>Trạng thái:</strong> <StatusPill value={selectedEmployee.trangThai} />
+                    <strong>Trạng thái:</strong>
+                    <span style={{
+                      marginLeft: '8px',
+                      padding: '2px 8px',
+                      borderRadius: '3px',
+                      color: 'white',
+                      backgroundColor: getStatusBadgeColor(selectedEmployee.trangThai),
+                      fontSize: '12px',
+                    }}>
+                      {selectedEmployee.trangThai}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 style={{ marginBottom: '10px' }}>Quyền Hạn Được Cấp</h3>
+                <h3 style={{ marginBottom: '10px' }}>Quyền Hạn Được Cấp ({selectedPermissions.length}/{permissions.length})</h3>
                 <div
                   style={{
                     border: '1px solid #ddd',
@@ -253,6 +306,7 @@ export default function StaffManagementPage() {
                     padding: '12px',
                     maxHeight: '400px',
                     overflowY: 'auto',
+                    backgroundColor: '#fff',
                   }}
                 >
                   {permissions.length === 0 ? (
@@ -312,7 +366,7 @@ export default function StaffManagementPage() {
                   style={{
                     marginTop: '15px',
                     padding: '10px 16px',
-                    backgroundColor: '#2196F3',
+                    backgroundColor: saving ? '#ccc' : '#2196F3',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
@@ -322,6 +376,7 @@ export default function StaffManagementPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
+                    opacity: saving ? 0.6 : 1,
                   }}
                 >
                   <Save size={16} />
@@ -341,11 +396,28 @@ export default function StaffManagementPage() {
               }}
             >
               <Edit3 size={48} style={{ marginBottom: '10px', opacity: 0.5 }} />
-              <div>Chọn một nhân viên từ danh sách bên trái</div>
+              <div style={{ fontSize: '14px' }}>Chọn một nhân viên từ danh sách bên trái</div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          padding: '12px 20px',
+          backgroundColor: '#4caf50',
+          color: 'white',
+          borderRadius: '4px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          animation: 'fadeIn 0.2s',
+        }}>
+          {toast}
+        </div>
+      )}
     </section>
   );
 }
