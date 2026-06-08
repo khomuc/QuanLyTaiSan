@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { EmployeeModal } from './components/EmployeeModal';
 import { Toast } from './components/Toast';
-import { api, clearStoredToken, getStoredToken, setStoredToken } from './lib/api';
+import { useAuth } from './contexts/AuthContext';
+import { api } from './lib/api';
 import * as demo from './lib/mockData';
 import type {
   ApiMode,
@@ -12,7 +13,6 @@ import type {
   Asset,
   AssetCategory,
   AuditLog,
-  AuthUser,
   DashboardOverview,
   Department,
   Employee,
@@ -28,6 +28,7 @@ const LoginScreen = lazy(() => import('./pages/LoginScreen'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const AssetsPage = lazy(() => import('./pages/AssetsPage'));
 const EmployeesPage = lazy(() => import('./pages/EmployeesPage'));
+const StaffManagementPage = lazy(() => import('./pages/StaffManagementPage'));
 const RolesPage = lazy(() => import('./pages/RolesPage'));
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
@@ -47,22 +48,18 @@ const emptyEmployee: EmployeeForm = {
   trangThai: 'ACTIVE',
 };
 
-const FALLBACK = <div className="loading-screen">Dang tai...</div>;
+const FALLBACK = <div className="loading-screen">Đang tải...</div>;
 
-// ─── AppContent ────────────────────────────────────────────────────────────────
+// ─── AppContent ──────────────────────────────────────────────────────────
 // Renders when the user is authenticated.
-// onLogout is lifted up to App so App can clear its own token/user state.
+// Uses AuthContext for auth state instead of managing it locally.
 
-interface AppContentProps {
-  user: AuthUser;
-  onLogout: () => void;
-}
-
-function AppContent({ user, onLogout }: AppContentProps) {
+function AppContent() {
+  const { user, logout, apiMode: authApiMode } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const [apiMode, setApiMode] = useState<ApiMode>('api');
+  const [apiMode, setApiMode] = useState<ApiMode>(authApiMode || 'api');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
 
@@ -99,7 +96,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
     if (selected) setSelectedPermissionIds(selected.permissions);
   }, [roles, selectedRoleId]);
 
-  // ── Data loading ────────────────────────────────────────────────────────────
+  // ── Data loading ──────────────────────────────────────────────────────────
 
   async function loadView(viewName: string) {
     setLoading(true);
@@ -117,7 +114,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
         setAssetCategories(categoryList);
         setDepartments(departmentList);
       }
-      if (viewName === 'employees') {
+      if (viewName === 'employees' || viewName === 'staff-management') {
         const [employeeList, departmentList, roleList] = await Promise.all([
           api.employees(employeeSearch),
           api.departments(),
@@ -155,7 +152,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
   function loadDemoView(viewName: string) {
     if (viewName === 'dashboard') setDashboard(demo.dashboard);
     if (viewName === 'assets') { setAssets(demo.assets); setAssetCategories(demo.assetCategories); setDepartments(demo.departments); }
-    if (viewName === 'employees') { setEmployees(demo.employees); setDepartments(demo.departments); setRoles(demo.roles); }
+    if (viewName === 'employees' || viewName === 'staff-management') { setEmployees(demo.employees); setDepartments(demo.departments); setRoles(demo.roles); }
     if (viewName === 'roles') { setRoles(demo.roles); setPermissions(demo.permissions); }
     if (viewName === 'approvals') setApprovals(demo.approvals);
     if (viewName === 'notifications') setNotifications(demo.notifications);
@@ -164,8 +161,6 @@ function AppContent({ user, onLogout }: AppContentProps) {
   }
 
   // Auto-load data whenever the route changes.
-  // We keep a ref so the effect only re-runs on pathname change, not on every
-  // re-render of loadView (which closes over filter state).
   const loadViewRef = useRef(loadView);
   useEffect(() => { loadViewRef.current = loadView; });
 
@@ -174,7 +169,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
     void loadViewRef.current(view);
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Employee CRUD ────────────────────────────────────────────────────────────
+  // ── Employee CRUD ─────────────────────────────────────────────────────────
 
   function openCreateEmployee() {
     setEditingEmployee(null);
@@ -214,7 +209,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
         const created = await api.createEmployee({ ...payload, matKhau: employeeForm.matKhau || '123456' });
         setEmployees((cur) => [created, ...cur]);
       }
-      setToast('Da luu nhan vien');
+      setToast('Đã lưu nhân viên');
     } catch {
       const fallback: Employee = {
         maNhanVien: employeeForm.maNhanVien,
@@ -232,7 +227,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
         editingEmployee ? cur.map((e) => (e.maNhanVien === editingEmployee ? fallback : e)) : [fallback, ...cur],
       );
       setApiMode('demo');
-      setToast('Da cap nhat tren du lieu demo');
+      setToast('Đã cập nhật trên dữ liệu demo');
     }
     setEmployeeModal(false);
   }
@@ -240,36 +235,36 @@ function AppContent({ user, onLogout }: AppContentProps) {
   async function deactivateEmployee(maNhanVien: string) {
     try {
       await api.deleteEmployee(maNhanVien);
-      setToast('Da khoa tai khoan nhan vien');
+      setToast('Đã khóa tài khoản nhân viên');
     } catch {
       setApiMode('demo');
-      setToast('Da khoa tren du lieu demo');
+      setToast('Đã khóa trên dữ liệu demo');
     }
     setEmployees((cur) => cur.map((e) => (e.maNhanVien === maNhanVien ? { ...e, trangThai: 'INACTIVE' } : e)));
   }
 
-  // ── Other actions ────────────────────────────────────────────────────────────
+  // ── Other actions ─────────────────────────────────────────────────────────
 
   async function saveRolePermissions() {
     if (!selectedRole) return;
     try {
       const updated = await api.assignPermissions(selectedRole.maVaiTro, selectedPermissionIds);
       setRoles((cur) => cur.map((r) => (r.maVaiTro === updated.maVaiTro ? updated : r)));
-      setToast('Da cap nhat quyen');
+      setToast('Đã cập nhật quyền');
     } catch {
       setRoles((cur) => cur.map((r) => (r.maVaiTro === selectedRole.maVaiTro ? { ...r, permissions: selectedPermissionIds } : r)));
       setApiMode('demo');
-      setToast('Da cap nhat quyen tren du lieu demo');
+      setToast('Đã cập nhật quyền trên dữ liệu demo');
     }
   }
 
   async function signApproval(item: ApprovalItem, status: 'DA_KY' | 'TU_CHOI') {
     try {
       await api.signApproval(item, status);
-      setToast(status === 'DA_KY' ? 'Da ky duyet' : 'Da tu choi');
+      setToast(status === 'DA_KY' ? 'Đã ký duyệt' : 'Đã từ chối');
     } catch {
       setApiMode('demo');
-      setToast(status === 'DA_KY' ? 'Da ky duyet demo' : 'Da tu choi demo');
+      setToast(status === 'DA_KY' ? 'Đã ký duyệt demo' : 'Đã từ chối demo');
     }
     setApprovals((cur) => cur.filter((a) => a.maPhieu !== item.maPhieu || a.loaiPhieu !== item.loaiPhieu));
   }
@@ -277,35 +272,39 @@ function AppContent({ user, onLogout }: AppContentProps) {
   async function saveSettings(nextSettings: SystemSettings) {
     try {
       setSettings(await api.updateSettings(nextSettings));
-      setToast('Da luu cau hinh');
+      setToast('Đã lưu cấu hình');
     } catch {
       setSettings(nextSettings);
       setApiMode('demo');
-      setToast('Da luu cau hinh demo');
+      setToast('Đã lưu cấu hình demo');
     }
   }
 
   async function saveProfile(payload: ProfileUpdatePayload) {
     try {
       await api.updateProfile(payload);
-      setToast('Da cap nhat thong tin ca nhan');
+      setToast('Đã cập nhật thông tin cá nhân');
     } catch {
       setApiMode('demo');
-      setToast('Da cap nhat thong tin demo');
+      setToast('Đã cập nhật thông tin demo');
     }
   }
 
   async function changePassword(oldPassword: string, newPassword: string) {
     try {
       await api.changePassword(oldPassword, newPassword);
-      setToast('Da doi mat khau');
+      setToast('Đã đổi mật khẩu');
     } catch {
       setApiMode('demo');
-      setToast('Chua doi duoc mat khau API');
+      setToast('Chưa đổi được mật khẩu API');
     }
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <>
@@ -315,7 +314,7 @@ function AppContent({ user, onLogout }: AppContentProps) {
             <AppLayout
               apiMode={apiMode}
               loading={loading}
-              onLogout={onLogout}
+              onLogout={logout}
               onReload={() => {
                 const view = pathname.replace(/^\//, '') || 'dashboard';
                 void loadView(view);
@@ -359,6 +358,8 @@ function AppContent({ user, onLogout }: AppContentProps) {
               <Suspense fallback={FALLBACK}>
                 <EmployeesPage
                   employees={employees}
+                  departments={departments}
+                  roles={roles}
                   search={employeeSearch}
                   onSearch={setEmployeeSearch}
                   onCreate={openCreateEmployee}
@@ -366,6 +367,14 @@ function AppContent({ user, onLogout }: AppContentProps) {
                   onDelete={(id) => void deactivateEmployee(id)}
                   onRefresh={() => void loadView('employees')}
                 />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/staff-management"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <StaffManagementPage />
               </Suspense>
             }
           />
@@ -459,74 +468,24 @@ function AppContent({ user, onLogout }: AppContentProps) {
   );
 }
 
-// ─── App (root) ────────────────────────────────────────────────────────────────
-// Owns auth state (token + user). Passes handleLogout to AppContent so that
-// logging out correctly clears React state, not just localStorage.
+// ─── App (root) ──────────────────────────────────────────────────────────
+// Root component wrapped with AuthProvider in main.tsx
+// Renders LoginScreen or AppContent based on auth state
 
-function App() {
-  const [token, setToken] = useState(getStoredToken());
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function App() {
+  const { user, loading, initialized, loginSuccess } = useAuth();
 
-  useEffect(() => {
-    if (!token) { setLoading(false); return; }
-
-    if (token === 'demo-token') {
-      setUser(demo.demoUser);
-      setLoading(false);
-      return;
-    }
-
-    api.me()
-      .then((profile) => setUser(profile))
-      .catch(() => { clearStoredToken(); setToken(null); })
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  // Clears both localStorage AND React state — the route guard (!token → /login)
-  // then automatically redirects without needing an explicit navigate() call.
-  function handleLogout() {
-    clearStoredToken();
-    setToken(null);
-    setUser(null);
+  if (!initialized || loading) {
+    return <div className="loading-screen">Đang tải...</div>;
   }
 
-  if (loading) return <div className="loading-screen">Dang tai...</div>;
+  if (!user) {
+    return (
+      <Suspense fallback={<div className="loading-screen">Đang tải...</div>}>
+        <LoginScreen onSuccess={loginSuccess} />
+      </Suspense>
+    );
+  }
 
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            token ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <Suspense fallback={<div className="loading-screen">Dang tai...</div>}>
-                <LoginScreen
-                  onSuccess={(result) => {
-                    setStoredToken(result.token);
-                    setToken(result.token);
-                    setUser(result.user);
-                  }}
-                />
-              </Suspense>
-            )
-          }
-        />
-        <Route
-          path="/*"
-          element={
-            !token ? (
-              <Navigate to="/login" replace />
-            ) : (
-              <AppContent user={user!} onLogout={handleLogout} />
-            )
-          }
-        />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <AppContent />;
 }
-
-export default App;
