@@ -1,81 +1,87 @@
 # 🗂️ Hệ Thống Quản Lý Tài Sản QR
 
-> **Asset Management System** — Quản lý tài sản tổ chức bằng mã QR, phân quyền RBAC, quy trình phê duyệt và kiểm kê tự động.
+> Ứng dụng web full-stack quản lý tài sản tổ chức bằng mã QR, phân quyền RBAC theo vai trò và từng nhân viên, quy trình ký duyệt điều chuyển & kiểm kê tài sản, ghi nhật ký audit toàn bộ hành động.
 
-**Repository:** <https://github.com/khomuc/QuanLyTaiSan>  
-**Branch đang phát triển:** `test`  
-**Cập nhật lần cuối:** 2025-06-08
+**Repository:** https://github.com/nnttkhiemmdays/QuanLyTaiSan  
+**Branch phát triển:** `test`
 
 ---
 
-## 📋 Mục Lục
+## Mục Lục
 
-1. [Giới Thiệu Dự Án](#1-giới-thiệu-dự-án)
+1. [Giới Thiệu](#1-giới-thiệu)
 2. [Thông Tin Team](#2-thông-tin-team)
 3. [Tech Stack](#3-tech-stack)
 4. [Cấu Trúc Project](#4-cấu-trúc-project)
 5. [Hướng Dẫn Cài Đặt & Chạy](#5-hướng-dẫn-cài-đặt--chạy)
 6. [Cấu Hình Môi Trường](#6-cấu-hình-môi-trường)
-7. [Tính Năng Hệ Thống](#7-tính-năng-hệ-thống)
-8. [API Endpoints](#8-api-endpoints)
-9. [Kiểm Thử](#9-kiểm-thử)
-10. [Bảo Mật](#10-bảo-mật)
-11. [Tiến Độ Phát Triển](#11-tiến-độ-phát-triển)
-12. [Tài Liệu Liên Quan](#12-tài-liệu-liên-quan)
+7. [Database & Migrations](#7-database--migrations)
+8. [Tính Năng Chi Tiết](#8-tính-năng-chi-tiết)
+9. [API Reference](#9-api-reference)
+10. [Phân Quyền & Điều Hướng](#10-phân-quyền--điều-hướng)
+11. [Demo Mode](#11-demo-mode)
+12. [Bảo Mật](#12-bảo-mật)
+13. [Tài Khoản Test](#13-tài-khoản-test)
 
 ---
 
-## 1. Giới Thiệu Dự Án
+## 1. Giới Thiệu
 
-Hệ thống **Quản Lý Tài Sản QR** là ứng dụng web full-stack giúp tổ chức:
+Hệ thống **Quản Lý Tài Sản QR** là ứng dụng web giúp tổ chức:
 
-- **Quản lý tài sản** bằng mã QR — tạo, in, quét và tra cứu nhanh.
-- **Kiểm kê định kỳ** với QR scanning thực tế.
-- **Điều chuyển tài sản** giữa các phòng ban kèm ký duyệt.
-- **Phân quyền RBAC** — Admin / Manager / Accountant / Staff.
-- **Ghi đè quyền (Permission Override)** cấp độ từng nhân viên.
-- **Audit logging** toàn bộ hành động người dùng.
-- **Email notifications** cho các luồng phê duyệt.
+- **Quản lý tài sản** bằng mã QR — tạo, tra cứu, lọc theo loại / phòng ban / trạng thái.
+- **Điều chuyển tài sản** giữa các phòng ban với quy trình ký duyệt nhiều vòng.
+- **Kiểm kê định kỳ** với phiếu kiểm kê và quy trình phê duyệt tương tự.
+- **Phân quyền RBAC** — 4 vai trò chuẩn: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `STAFF`.
+- **Override quyền từng nhân viên** — cấp thêm hoặc thu hồi quyền riêng lẻ so với vai trò.
+- **Audit logging** — ghi lại toàn bộ hành động: ai, làm gì, khi nào.
+- **Email notifications** — tự động gửi mail khi có phiếu chờ ký duyệt.
 - **Demo mode** — tự động fallback sang dữ liệu mẫu khi backend chưa sẵn sàng.
 
 ---
 
 ## 2. Thông Tin Team
 
-| STT | Họ và Tên                | MSSV     | Vai Trò              | Phạm Vi Công Việc                                              |
-| --- | ------------------------ | -------- | -------------------- | -------------------------------------------------------------- |
-| 1   | **Nguyễn Thị Huỳnh Như** | B2204960 | Team Lead            | Auth, RBAC, Frontend Infrastructure, Dashboard, Profile, Email |
-| 2   | Nguyễn Minh Khôi         | B2204941 | Asset Management     | Asset CRUD, Danh sách, Import/Export, QR Print, Báo cáo        |
-| 3   | Đỗ Minh Mẫn              | B2104812 | Inventory Management | Kiểm kê, QR Scanning, Tổng hợp, Báo cáo                        |
-| 4   | Nguyễn Phú Bình          | B2204923 | Transfer Management  | Điều chuyển tài sản, Ký duyệt, Báo cáo                         |
-
-> **Liên hệ Team Lead:** [@nnhuwz03](https://github.com/nnhuwz03) — hoặc tạo issue trên GitHub.
+| STT | Họ và Tên | MSSV | Vai Trò | Phạm Vi |
+|:---:|-----------|:----:|---------|---------|
+| 1 | **Nguyễn Thị Huỳnh Như** | B2204960 | Team Lead | Auth, RBAC, Frontend infrastructure, Dashboard, Profile, Email service |
+| 2 | Nguyễn Minh Khôi | B2204941 | Asset Management | Asset CRUD, danh sách, lọc, QR, báo cáo |
+| 3 | Đỗ Minh Mẫn | B2104812 | Inventory | Kiểm kê, phê duyệt kiểm kê, báo cáo |
+| 4 | Nguyễn Phú Bình | B2204923 | Transfer | Điều chuyển tài sản, ký duyệt, báo cáo |
 
 ---
 
 ## 3. Tech Stack
 
-### Frontend
-
-| Công nghệ        | Phiên bản | Mục đích                |
-| ---------------- | --------- | ----------------------- |
-| React            | 19.0.0    | UI Framework            |
-| TypeScript       | 5.7.3     | Type safety             |
-| Vite             | 6.0.0     | Build tool & Dev server |
-| React Router DOM | 6.20.0    | Client-side routing     |
-| Lucide React     | 0.468.0   | Icons                   |
-
 ### Backend
 
-| Công nghệ       | Phiên bản | Mục đích          |
-| --------------- | --------- | ----------------- |
-| NestJS          | 11.0.1    | Backend Framework |
-| TypeORM         | 0.3.29    | ORM               |
-| MySQL2          | 3.22.3    | Cơ sở dữ liệu     |
-| @nestjs/jwt     | 11.0.2    | JSON Web Token    |
-| Bcryptjs        | 3.0.3     | Mã hóa mật khẩu   |
-| Nodemailer      | 8.0.10    | Gửi email         |
-| class-validator | 0.15.1    | Validation DTO    |
+| Công nghệ | Phiên bản | Mục đích |
+|-----------|:---------:|---------|
+| NestJS | 11.0.1 | Framework backend chính |
+| MySQL2 | 3.22.3 | Driver kết nối MySQL (raw pool, không dùng ORM) |
+| TypeORM | 0.3.29 | Dependency (khai báo nhưng logic dùng mysql2 pool trực tiếp) |
+| @nestjs/jwt | 11.0.2 | Access token + Refresh token (JWT HS256) |
+| Bcryptjs | 3.0.3 | Hash mật khẩu (12 rounds) |
+| Nodemailer | 8.0.10 | Gửi email (SMTP / Gmail / SendGrid) |
+| class-validator | 0.15.1 | Validation DTO đầu vào |
+| class-transformer | 0.5.1 | Transform query params (số nguyên, v.v.) |
+
+### Frontend
+
+| Công nghệ | Phiên bản | Mục đích |
+|-----------|:---------:|---------|
+| React | 19.0.0 | UI Framework |
+| TypeScript | 5.7.3 | Type safety |
+| Vite | 6.0.0 | Build tool & Dev server |
+| React Router DOM | 6.20.0 | Client-side routing |
+| Lucide React | 0.468.0 | Icon library |
+
+### Infrastructure
+
+| Công nghệ | Mục đích |
+|-----------|---------|
+| MySQL 8.0+ | Cơ sở dữ liệu chính |
+| Node.js 18+ | Runtime |
 
 ---
 
@@ -83,30 +89,34 @@ Hệ thống **Quản Lý Tài Sản QR** là ứng dụng web full-stack giúp 
 
 ```
 QuanLyTaiSan/
-├── frontend/                         ← React + Vite frontend
+├── frontend/                          ← React + Vite frontend
 │   └── src/
-│       ├── main.tsx                  ← Entry point: BrowserRouter > AuthProvider > App
-│       ├── App.tsx                   ← Slim router (~30 dòng): auth-gate + delegate AppContent
+│       ├── main.tsx                   ← Entry: BrowserRouter > AuthProvider > App
+│       ├── App.tsx                    ← Router gốc: auth-gate + AppContent
 │       │
-│       ├── contexts/                 ← React Context providers
-│       │   └── AuthContext.tsx       ← AuthProvider, useAuth hook
-│       │                               (user, token, loading, initialized, apiMode,
-│       │                                login, logout, loginSuccess, reloadProfile)
+│       ├── contexts/
+│       │   └── AuthContext.tsx        ← AuthProvider, useAuth()
+│       │                                 (user, token, loading, initialized,
+│       │                                  apiMode, login, logout, loginSuccess,
+│       │                                  reloadProfile)
 │       │
-│       ├── components/               ← Shared UI components
-│       │   ├── AppContent.tsx        ← Orchestrator: toàn bộ state, data loading,
-│       │   │                           CRUD handlers và <Routes> con
-│       │   ├── AppLayout.tsx         ← Layout shell: Sidebar + Topbar + <Outlet />
-│       │   ├── Sidebar.tsx           ← Collapsible nav sidebar (desktop/mobile)
-│       │   ├── EmployeeModal.tsx     ← Modal tạo/chỉnh sửa nhân viên
-│       │   └── Toast.tsx             ← Thông báo thành công/lỗi
+│       ├── components/
+│       │   ├── AppContent.tsx         ← Orchestrator: state, data loading,
+│       │   │                             CRUD handlers, <Routes> con
+│       │   ├── AppLayout.tsx          ← Shell: Sidebar + Topbar + <Outlet />
+│       │   ├── Sidebar.tsx            ← Nav sidebar (collapsible, persist localStorage)
+│       │   ├── EmployeeModal.tsx      ← Modal tạo / chỉnh sửa nhân viên
+│       │   ├── EmployeesPage.tsx      ← Component nhân viên (trong components/)
+│       │   ├── RolesPage.tsx          ← Component vai trò (trong components/)
+│       │   ├── Toast.tsx              ← Thông báo toast
+│       │   └── ui.tsx                 ← Shared UI primitives
 │       │
-│       ├── pages/                    ← 11 page components (lazy-loaded)
+│       ├── pages/                     ← 11 page components (React.lazy)
 │       │   ├── LoginScreen.tsx
 │       │   ├── DashboardPage.tsx
 │       │   ├── AssetsPage.tsx
 │       │   ├── EmployeesPage.tsx
-│       │   ├── StaffManagementPage.tsx  ← MỚI: quản lý quyền theo từng nhân viên
+│       │   ├── StaffManagementPage.tsx  ← Phân quyền từng nhân viên
 │       │   ├── RolesPage.tsx
 │       │   ├── ApprovalsPage.tsx
 │       │   ├── NotificationsPage.tsx
@@ -114,68 +124,78 @@ QuanLyTaiSan/
 │       │   ├── AuditPage.tsx
 │       │   └── ProfilePage.tsx
 │       │
-│       ├── lib/                      ← Utilities & shared logic
-│       │   ├── api.ts                ← Fetch client (Bearer token, tất cả endpoints)
-│       │   ├── types.ts              ← TypeScript interfaces & types
-│       │   ├── navigation.ts         ← Nav items + getVisibleNavItems(user)
-│       │   └── mockData.ts           ← Dữ liệu demo fallback
-│       │
-│       └── styles/
-│           └── index.css
+│       └── lib/
+│           ├── api.ts                 ← HTTP client (Bearer token, auto-refresh)
+│           ├── types.ts               ← TypeScript interfaces
+│           ├── navigation.ts          ← Nav items + getVisibleNavItems(user)
+│           └── mockData.ts            ← Dữ liệu demo fallback
 │
-├── src/                              ← NestJS backend
-│   ├── auth/                         ← Login, JWT, Bcrypt, /auth/me, /auth/password
-│   ├── employees/                    ← Employee CRUD & quản lý
-│   ├── roles/                        ← RBAC, permissions, assignPermissions
-│   ├── assets/                       ← Asset CRUD, categories
-│   ├── dashboard/                    ← Thống kê tổng quan
-│   ├── audit-logs/                   ← Ghi lịch sử hành động
-│   ├── notifications/                ← Email + in-app alerts
-│   ├── approvals/                    ← Workflow ký duyệt (transfer + inventory)
-│   ├── settings/                     ← Cấu hình hệ thống
-│   ├── mailer/                       ← Email service (SMTP / Gmail / SendGrid)
-│   ├── common/                       ← Guards, decorators, interceptors
-│   ├── database.module.ts
-│   └── main.ts
+├── src/                               ← NestJS backend
+│   ├── main.ts                        ← Bootstrap: CORS, prefix /api, ValidationPipe
+│   ├── app.module.ts                  ← Root module
+│   ├── database.module.ts             ← MySQL connection pool (global)
+│   │
+│   ├── auth/                          ← Login, JWT, refresh token rotation
+│   ├── employees/                     ← Employee CRUD + permission override
+│   ├── roles/                         ← Vai trò, quyền, gán quyền
+│   ├── assets/                        ← Tài sản, danh mục
+│   ├── dashboard/                     ← Thống kê tổng quan
+│   ├── approvals/                     ← Ký duyệt điều chuyển + kiểm kê
+│   ├── notifications/                 ← In-app + email notifications
+│   ├── settings/                      ← Cấu hình runtime hệ thống
+│   ├── audit-logs/                    ← Lịch sử hành động
+│   ├── mailer/                        ← Email service (SMTP/Gmail/SendGrid)
+│   └── common/
+│       ├── constants.ts
+│       ├── decorators/
+│       │   ├── current-user.decorator.ts
+│       │   └── permissions.decorator.ts
+│       ├── guards/
+│       │   ├── jwt-auth.guard.ts      ← Xác thực JWT
+│       │   └── permissions.guard.ts   ← Kiểm tra quyền (ADMIN bypass tất cả)
+│       └── interfaces/
+│           └── auth-user.interface.ts
+│
+├── migrations/
+│   ├── 001_add_refresh_token_table.sql   ← Bảng REFRESH_TOKEN
+│   └── 002_add_nhan_vien_quyen.sql       ← Bảng NHAN_VIEN_QUYEN (override quyền)
 │
 ├── docs/
-│   ├── LOGIN_GUIDE.md                ← Hướng dẫn đăng nhập & phân quyền
-│   ├── TEST_CASES.md                 ← 16 test cases
-│   └── SECURITY_AUDIT.md
+│   ├── LOGIN_GUIDE.md
+│   ├── TEST_CASES.md
+│   ├── SECURITY_AUDIT.md
+│   └── BUGFIX_README.md
 │
-├── .env.example                      ← Template cấu hình môi trường
-├── package.json                      ← Backend dependencies & scripts
-└── README.md
+├── .env.example
+└── package.json
 ```
 
 ---
 
 ## 5. Hướng Dẫn Cài Đặt & Chạy
 
-### Yêu Cầu Hệ Thống
+### Yêu cầu
 
-- **Node.js** 18 trở lên
-- **MySQL** 8.0 trở lên
-- **Git**
+- Node.js **18+**
+- MySQL **8.0+**
+- Git
 
-### Bước 1 — Clone & Checkout Branch
+### Bước 1 — Clone & checkout branch
 
 ```bash
-git clone https://github.com/khomuc/QuanLyTaiSan.git
+git clone https://github.com/nnttkhiemmdays/QuanLyTaiSan.git
 cd QuanLyTaiSan
 git checkout test
 ```
 
-### Bước 2 — Cấu Hình Môi Trường
+### Bước 2 — Cấu hình môi trường
 
 ```bash
 cp .env.example .env
-# Mở file .env và điền thông tin thực tế của bạn
+# Mở .env và điền thông tin thực tế (xem mục 6)
 ```
 
-Xem chi tiết các biến cần thiết ở [mục 6](#6-cấu-hình-môi-trường).
-
-### Bước 3 — Cài Đặt Dependencies
+### Bước 3 — Cài đặt dependencies
 
 ```bash
 # Backend
@@ -185,21 +205,21 @@ npm install
 npm install --prefix frontend
 ```
 
-### Bước 4 — Khởi Tạo Database
+### Bước 4 — Khởi tạo database
 
 ```bash
 mysql -u root -p
 ```
 
-Sau khi đăng nhập MySQL:
-
 ```sql
-CREATE DATABASE quan_ly_tai_san CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE quan_ly_tai_san
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 ```
 
-TypeORM sẽ tự tạo bảng khi ứng dụng khởi động lần đầu (`synchronize: true` trong dev mode).
+Sau khi tạo DB, chạy migrations (xem mục 7).
 
-### Bước 5 — Chạy Development
+### Bước 5 — Chạy development
 
 Mở **hai terminal** song song:
 
@@ -211,9 +231,9 @@ npm run start:dev
 npm run frontend:dev
 ```
 
-> **Lưu ý:** Nếu backend chưa sẵn sàng, frontend sẽ tự động chuyển sang **Demo mode** (fallback `mockData`). Thanh trạng thái góc trên hiển thị `API` hoặc `DEMO` để phân biệt.
+Vite proxy tự động forward `/api/*` → `http://localhost:3000`.
 
-### Chạy Production
+### Chạy production
 
 ```bash
 # Build backend
@@ -228,32 +248,33 @@ npm run frontend:build
 
 ## 6. Cấu Hình Môi Trường
 
-File `.env` (tạo từ `.env.example`):
+File `.env` (copy từ `.env.example`):
 
-```env
-# ── Database ─────────────────────────────────
+```dotenv
+# ── Database ─────────────────────────────────────────
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=quan_ly_tai_san
 
-# ── JWT ──────────────────────────────────────
+# ── JWT ──────────────────────────────────────────────
 JWT_SECRET=your-secret-key-at-least-32-characters
 JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
 
-# ── Email — chọn một trong các provider ──────
-MAIL_PROVIDER=smtp          # smtp | gmail | sendgrid
+# ── Email — chọn một provider ─────────────────────────
+MAIL_PROVIDER=smtp            # smtp | gmail | sendgrid
 MAIL_FROM=noreply@quanlytaisan.local
 
-# Option 1: SMTP chung
+# Option 1: SMTP thông thường
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_SECURE=false
 MAIL_USER=your-email@gmail.com
 MAIL_PASSWORD=your-app-password
 
-# Option 2: Gmail (App Password)
+# Option 2: Gmail App Password
 # MAIL_PROVIDER=gmail
 # GMAIL_USER=your-email@gmail.com
 # GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
@@ -262,280 +283,352 @@ MAIL_PASSWORD=your-app-password
 # MAIL_PROVIDER=sendgrid
 # SENDGRID_API_KEY=SG.xxxxx...
 
-# ── App ──────────────────────────────────────
+# ── App ──────────────────────────────────────────────
 FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
 PORT=3000
 ```
 
-> **Tạo Gmail App Password:** Tài khoản Google → Bảo mật → Xác minh 2 bước → App Passwords.
+> **Tạo Gmail App Password:** Google Account → Security → 2-Step Verification → App Passwords.
 
 ---
 
-## 7. Tính Năng Hệ Thống
+## 7. Database & Migrations
 
-### Authentication & Authorization
+### Schema chính
 
-- Đăng nhập bằng email + mật khẩu.
-- JWT token có thời hạn 24 giờ, lưu trong `localStorage` (key: `qlts_access_token`).
-- Mật khẩu được mã hóa bằng Bcrypt.
-- RBAC với 4 vai trò: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `STAFF`.
-- `JwtAuthGuard` bảo vệ toàn bộ API endpoints.
-- **`AuthContext`** quản lý trạng thái xác thực toàn cục:
-  - `initialized` — đã kiểm tra token lưu trữ lần đầu chưa.
-  - `apiMode: 'api' | 'demo'` — cho biết đang dùng backend thật hay dữ liệu demo.
-  - `loginSuccess(result)` — cập nhật state sau khi login thành công từ `LoginScreen`.
-  - `reloadProfile()` — làm mới thông tin user hiện tại.
+Backend dùng **raw MySQL pool** (`mysql2/promise`), không dùng ORM synchronize. Bảng phải được tạo thủ công từ schema SQL của dự án.
 
-### Demo Mode (Offline Fallback)
+### Migrations bổ sung
 
-Khi backend không phản hồi, `AppContent` tự động fallback về `mockData`:
-- Tất cả thao tác CRUD vẫn hoạt động trên dữ liệu local.
-- Pill `DEMO` màu cam xuất hiện trên topbar.
-- Pill `API` màu xanh khi kết nối backend thành công.
+Sau khi tạo schema gốc, chạy thêm 2 migration theo thứ tự:
 
-### Điều Hướng Theo Quyền
+```bash
+# Migration 1: Bảng REFRESH_TOKEN (refresh token rotation)
+mysql -u root -p quan_ly_tai_san < migrations/001_add_refresh_token_table.sql
 
-`getVisibleNavItems(user)` trong `lib/navigation.ts` lọc menu theo `user.permissions`:
-- User có `permissions: ['*']` (Admin/Demo) thấy tất cả 10 mục.
-- Các mục có `requiredPermissions` chỉ hiện khi user có ít nhất một quyền phù hợp.
+# Migration 2: Bảng NHAN_VIEN_QUYEN (override quyền từng nhân viên)
+mysql -u root -p quan_ly_tai_san < migrations/002_add_nhan_vien_quyen.sql
+```
 
-| Nav item            | Route              | Quyền yêu cầu                        |
-| ------------------- | ------------------ | ------------------------------------- |
-| Tổng quan           | `/dashboard`       | *(luôn hiển thị)*                     |
-| Tài sản             | `/assets`          | `ASSET_VIEW`                          |
-| Nhân viên           | `/employees`       | `STAFF_VIEW`                          |
-| Quản lý nhân viên   | `/staff-management`| `STAFF_MANAGE` hoặc `ROLE_MANAGE`     |
-| Vai trò & quyền     | `/roles`           | `ROLE_MANAGE`                         |
-| Ký duyệt            | `/approvals`       | `APPROVAL_VIEW`                       |
-| Thông báo           | `/notifications`   | *(luôn hiển thị)*                     |
-| Cấu hình            | `/settings`        | `SETTINGS_MANAGE`                     |
-| Giám sát log        | `/audit`           | `AUDIT_VIEW`                          |
-| Tài khoản           | `/profile`         | *(luôn hiển thị)*                     |
+### Các bảng liên quan đến auth & phân quyền
 
-### Dashboard
+| Bảng | Mục đích |
+|------|---------|
+| `NHAN_VIEN` | Thông tin nhân viên + mật khẩu |
+| `PHONG_BAN` | Danh sách phòng ban |
+| `VAI_TRO` | Danh sách vai trò |
+| `QUYEN` | Danh sách tất cả quyền trong hệ thống |
+| `VAI_TRO_QUYEN` | Quyền mặc định theo vai trò |
+| `NHAN_VIEN_QUYEN` | Override quyền riêng từng nhân viên |
+| `REFRESH_TOKEN` | Refresh token (SHA-256 hash, hỗ trợ rotation) |
+| `AUDIT_LOG` | Nhật ký hành động |
 
-- Thống kê tổng số nhân viên, tài sản theo trạng thái.
-- Số lượng phê duyệt đang chờ xử lý (transfer + inventory).
-- Audit logs hoạt động gần đây.
-- Quick stats cards theo vai trò người dùng.
+---
+
+## 8. Tính Năng Chi Tiết
+
+### Authentication
+
+- Đăng nhập bằng `email` + `matKhau`.
+- Trả về **access token** (JWT HS256, 24h) và **refresh token** (7d).
+- Access token lưu trong `localStorage` (key: `qlts_access_token`).
+- Refresh token lưu trong `localStorage` (key: `qlts_refresh_token`), hash SHA-256 lưu DB.
+- Auto-refresh token khi API trả về 401 — queues các request đang chờ, rồi retry sau khi refresh xong.
+- Token rotation: mỗi lần refresh, refresh token cũ bị revoke ngay, cấp token mới.
+- Đổi mật khẩu revoke toàn bộ refresh token cũ (security best practice).
+
+### RBAC & Phân Quyền
+
+**Luồng xác định quyền khi login / gọi `/auth/me`:**
+
+```
+1. Đọc quyền của vai trò từ VAI_TRO_QUYEN
+2. Kiểm tra NHAN_VIEN_QUYEN có dữ liệu không:
+   - Có → dùng TOÀN BỘ quyền cá nhân (override vai trò)
+   - Không → dùng quyền của vai trò
+3. Nhúng permissions[] vào JWT payload
+```
+
+**PermissionsGuard:**
+- `ADMIN` role → bypass mọi kiểm tra, luôn được phép.
+- Các role khác → phải có ít nhất một trong các permission yêu cầu.
 
 ### Quản Lý Nhân Viên
 
-- Danh sách có tìm kiếm, lọc theo phòng ban / vai trò / trạng thái.
-- Tạo, chỉnh sửa thông tin nhân viên qua `EmployeeModal`.
-- Vô hiệu hóa tài khoản (soft delete — `trangThai: 'INACTIVE'`).
+- Danh sách với tìm kiếm + lọc theo phòng ban / vai trò / trạng thái.
+- Tạo / chỉnh sửa nhân viên qua modal.
+- Soft-delete: set `TrangThai = 'INACTIVE'` (không xóa DB).
+- Phân trang (mặc định 20 items/trang, tối đa 100).
 
-### Quản Lý Quyền Nhân Viên (`StaffManagementPage`) *(MỚI)*
+### Phân Quyền Từng Nhân Viên (`StaffManagementPage`)
 
-- Chọn nhân viên từ danh sách (lọc theo phòng ban / vai trò / trạng thái / tìm kiếm).
-- Xem quyền theo **module** (Tài sản, Nhân viên, Vai trò, Ký duyệt, Cấu hình, Log).
-- Tích/bỏ tích từng quyền và lưu **Permission Override** trực tiếp cho nhân viên đó.
-- Hiển thị avatar initials, thông tin phòng ban và vai trò.
+- Admin chọn nhân viên → tải quyền cá nhân từ API (`GET /employees/:id/permissions`).
+- Nếu nhân viên chưa có override → hiển thị quyền mặc định của vai trò.
+- Tích / bỏ tích từng quyền → nhấn **Lưu quyền hạn** → gọi `PUT /employees/:id/permissions`.
+- Override lưu vào bảng `NHAN_VIEN_QUYEN`, có hiệu lực ngay khi nhân viên đăng nhập lại.
+- Nút **Đặt lại** → khôi phục về quyền mặc định của vai trò.
 
-### Quản Lý Tài Sản *(Nguyễn Minh Khôi)*
+### Tài Sản
 
-- CRUD tài sản đầy đủ.
-- Sinh mã QR và in nhãn.
-- Import/Export danh sách tài sản.
-- Lọc nâng cao: loại tài sản, phòng ban, trạng thái.
-- Báo cáo tài sản theo phòng ban / trạng thái.
+- Danh sách với tìm kiếm + lọc theo loại tài sản / phòng ban / trạng thái.
+- Trạng thái tài sản: `HOAT_DONG`, `BAO_TRI`, `HONG`.
+- Phân trang.
 
-### Kiểm Kê *(Đỗ Minh Mẫn)*
+### Dashboard
 
-- Tạo phiếu kiểm kê định kỳ.
-- Quét QR bằng camera để xác nhận tài sản.
-- Tổng hợp kết quả kiểm kê.
-- Báo cáo chênh lệch.
+- Tổng số nhân viên theo trạng thái.
+- Tổng số tài sản theo trạng thái.
+- Số phiếu chờ ký duyệt (điều chuyển + kiểm kê).
+- 10 audit log gần nhất.
 
-### Điều Chuyển Tài Sản *(Nguyễn Phú Bình)*
+### Ký Duyệt
 
-- Lập phiếu điều chuyển giữa các phòng ban.
-- Quy trình ký duyệt nhiều cấp.
-- Báo cáo lịch sử điều chuyển.
+- Danh sách phiếu chờ ký của người dùng hiện tại.
+- Hỗ trợ 2 loại: **điều chuyển tài sản** và **kiểm kê**.
+- Ký duyệt hoặc từ chối kèm ghi chú lý do.
+- Gán người phê duyệt cho từng vòng ký.
 
-### Phê Duyệt & Thông Báo
+### Thông Báo
 
-- Danh sách chờ phê duyệt tập trung (transfer + inventory).
-- Ký duyệt / Từ chối kèm ghi chú lý do.
-- Gửi email thông báo tự động khi có phê duyệt mới.
-- In-app notifications.
+- Danh sách phiếu chờ ký của người dùng.
+- Gửi email nhắc nhở phê duyệt (cần quyền `TRANSFER_APPROVE` hoặc `INVENTORY_APPROVE`).
+
+### Email Service
+
+Hỗ trợ 3 provider cấu hình qua biến môi trường:
+- `smtp` — SMTP server tùy chỉnh.
+- `gmail` — Gmail App Password.
+- `sendgrid` — SendGrid API Key.
 
 ### Audit Logging
 
-- Ghi lại: ai, làm gì, khi nào, từ IP nào.
-- Tìm kiếm và lọc theo loại tài nguyên, người dùng, thời gian.
+- Ghi lại tất cả hành động quan trọng: đăng nhập, tạo/sửa/xóa nhân viên, phân quyền, thay đổi cấu hình, ký duyệt.
+- Lọc theo nhân viên, hành động, đối tượng, trạng thái, khoảng thời gian.
+- Phân trang.
 
-### Cấu Hình Hệ Thống *(Admin only)*
+### Cấu Hình Hệ Thống (Admin only)
 
-- Đặt tên ứng dụng.
-- Cấu hình thời hạn JWT.
-- Bật/tắt email và in-app notifications.
+Lưu runtime (reset khi restart server):
+- `appName` — tên ứng dụng.
+- `jwtExpiresIn` — thời hạn JWT.
+- `emailNotificationsEnabled` — bật/tắt gửi email.
+- `inAppNotificationsEnabled` — bật/tắt thông báo in-app.
+
+### Demo Mode
+
+Khi backend không phản hồi, `AuthContext` và `AppContent` tự động fallback về `mockData.ts`:
+- Tất cả màn hình hiển thị với dữ liệu mẫu.
+- Topbar hiển thị badge **DEMO** (cam) hoặc **API** (xanh).
+- Bấm "Dùng Demo" trên màn hình login → vào ngay với quyền Admin, không cần backend.
 
 ---
 
-## 8. API Endpoints
+## 9. API Reference
 
 Base URL: `http://localhost:3000/api`
 
-> Tất cả endpoints (trừ `/auth/login`) yêu cầu header:
+> Tất cả endpoints (trừ `/auth/login`, `/auth/refresh`) yêu cầu header:
 > ```
-> Authorization: Bearer <jwt_token>
+> Authorization: Bearer <access_token>
 > ```
 
 ### Auth
 
-```
-POST   /auth/login            Đăng nhập → { accessToken, user }
-GET    /auth/me               Lấy thông tin user hiện tại
-PATCH  /auth/me               Cập nhật thông tin cá nhân (ProfileUpdatePayload)
-PATCH  /auth/password         Đổi mật khẩu { matKhauCu, matKhauMoi }
-GET    /auth/departments      Danh sách phòng ban (dùng cho Profile)
-```
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| POST | `/auth/login` | Public | Đăng nhập → `{ accessToken, refreshToken, user }` |
+| POST | `/auth/refresh` | Public | Refresh token → cặp token mới (token rotation) |
+| POST | `/auth/logout` | Logged in | Revoke refresh token |
+| GET | `/auth/me` | Logged in | Thông tin + quyền người dùng hiện tại |
+| PATCH | `/auth/me` | Logged in | Cập nhật thông tin cá nhân |
+| PATCH | `/auth/password` | Logged in | Đổi mật khẩu `{ matKhauCu, matKhauMoi }` |
+| GET | `/auth/departments` | Logged in | Danh sách phòng ban (dùng cho form profile) |
 
 ### Employees
 
-```
-GET    /employees                        Danh sách (?search=)
-GET    /employees/meta/departments       Danh sách phòng ban
-POST   /employees                        Tạo nhân viên mới
-PATCH  /employees/:maNhanVien            Cập nhật thông tin
-DELETE /employees/:maNhanVien            Vô hiệu hóa tài khoản
-```
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/employees` | `STAFF_VIEW` | Danh sách nhân viên (query: `search`, `maPhongBan`, `maVaiTro`, `trangThai`, `page`, `limit`) |
+| GET | `/employees/meta/departments` | `STAFF_VIEW` | Danh sách phòng ban |
+| GET | `/employees/:maNhanVien` | `STAFF_VIEW` | Chi tiết một nhân viên |
+| GET | `/employees/:maNhanVien/permissions` | `STAFF_MANAGE` \| `ROLE_MANAGE` | Quyền cá nhân đã override của nhân viên |
+| POST | `/employees` | `STAFF_CREATE` | Tạo nhân viên mới |
+| PATCH | `/employees/:maNhanVien` | `STAFF_EDIT` | Cập nhật thông tin nhân viên |
+| DELETE | `/employees/:maNhanVien` | `STAFF_DELETE` | Vô hiệu hóa nhân viên (soft-delete) |
+| PUT | `/employees/:maNhanVien/permissions` | `STAFF_MANAGE` \| `ROLE_MANAGE` | Lưu override quyền cá nhân `{ maQuyen: string[] }` |
 
 ### Assets
 
-```
-GET    /assets                           Danh sách (?search, ?maLoai, ?maPhongBan, ?trangThai)
-GET    /assets/meta/categories           Danh sách loại tài sản
-```
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/assets` | `ASSET_VIEW` | Danh sách tài sản (query: `search`, `maLoai`, `maPhongBan`, `trangThai`, `page`, `limit`) |
+| GET | `/assets/meta/categories` | `ASSET_VIEW` | Danh sách loại tài sản |
+| GET | `/assets/:maTaiSan` | `ASSET_VIEW` | Chi tiết một tài sản |
 
 ### Roles & Permissions
 
-```
-GET    /roles                            Danh sách vai trò
-GET    /roles/permissions                Danh sách tất cả quyền
-POST   /roles                            Tạo vai trò mới
-PATCH  /roles/:maVaiTro                  Cập nhật vai trò
-PUT    /roles/:maVaiTro/permissions      Cập nhật quyền cho vai trò { maQuyen[] }
-```
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/roles` | `ROLE_MANAGE` | Danh sách vai trò kèm quyền |
+| POST | `/roles` | `ROLE_MANAGE` | Tạo vai trò mới |
+| GET | `/roles/permissions` | `ROLE_MANAGE` | Danh sách tất cả quyền (query: `module`) |
+| POST | `/roles/permissions` | `ROLE_MANAGE` | Tạo quyền mới |
+| PATCH | `/roles/permissions/:maQuyen` | `ROLE_MANAGE` | Cập nhật thông tin quyền |
+| GET | `/roles/:maVaiTro` | `ROLE_MANAGE` | Chi tiết một vai trò |
+| PATCH | `/roles/:maVaiTro` | `ROLE_MANAGE` | Cập nhật vai trò |
+| PUT | `/roles/:maVaiTro/permissions` | `ROLE_MANAGE` | Gán quyền cho vai trò `{ maQuyen: string[] }` |
+| DELETE | `/roles/:maVaiTro` | `ROLE_MANAGE` | Xóa vai trò (trừ ADMIN, NHAN_VIEN, GUEST) |
+
+### Dashboard
+
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/dashboard/overview` | Logged in | Thống kê tổng quan |
 
 ### Approvals
 
-```
-GET    /approvals/pending                              Danh sách chờ phê duyệt
-POST   /approvals/transfer/:maPhieu/sign               Ký/từ chối phiếu điều chuyển
-POST   /approvals/inventory/:maPhieu/sign              Ký/từ chối phiếu kiểm kê
-```
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/approvals/pending` | Logged in | Phiếu chờ ký của user hiện tại |
+| GET | `/approvals/transfer/:soPhieu/approvers` | `TRANSFER_APPROVE` | Danh sách người ký duyệt phiếu điều chuyển |
+| PUT | `/approvals/transfer/:soPhieu/approvers` | `TRANSFER_APPROVE` | Gán người ký duyệt |
+| POST | `/approvals/transfer/:soPhieu/sign` | `TRANSFER_APPROVE` | Ký / từ chối phiếu điều chuyển |
+| GET | `/approvals/inventory/:maKiemKe/approvers` | `INVENTORY_APPROVE` | Danh sách người ký duyệt phiếu kiểm kê |
+| PUT | `/approvals/inventory/:maKiemKe/approvers` | `INVENTORY_APPROVE` | Gán người ký duyệt |
+| POST | `/approvals/inventory/:maKiemKe/sign` | `INVENTORY_APPROVE` | Ký / từ chối phiếu kiểm kê |
 
-### Các Module Khác
+### Notifications
 
-```
-GET    /dashboard/overview               Thống kê tổng quan
-GET    /notifications                    Danh sách thông báo
-GET    /settings                         Cấu hình hệ thống
-PATCH  /settings                         Cập nhật cấu hình
-GET    /audit-logs                       Lịch sử hành động (?search=)
-```
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/notifications` | Logged in | Thông báo phiếu chờ ký của user |
+| POST | `/notifications/approval-reminder` | `TRANSFER_APPROVE` \| `INVENTORY_APPROVE` | Gửi email nhắc nhở phê duyệt |
+
+### Settings
+
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/settings` | `CONFIG_SYSTEM` | Cấu hình hệ thống hiện tại |
+| PATCH | `/settings` | `CONFIG_SYSTEM` | Cập nhật cấu hình runtime |
+
+### Audit Logs
+
+| Method | Endpoint | Quyền | Mô tả |
+|--------|----------|-------|-------|
+| GET | `/audit-logs` | `AUDIT_VIEW` | Danh sách log (query: `search`, `maNhanVien`, `hanhDong`, `doiTuong`, `trangThai`, `fromDate`, `toDate`, `page`, `limit`) |
+| GET | `/audit-logs/:maLog` | `AUDIT_VIEW` | Chi tiết một log entry |
 
 ---
 
-## 9. Kiểm Thử
+## 10. Phân Quyền & Điều Hướng
 
-### Chạy Test
+### Bảng quyền theo module
+
+| Quyền | Module | Mô tả |
+|-------|--------|-------|
+| `ASSET_VIEW` | Tài sản | Xem danh sách và chi tiết tài sản |
+| `STAFF_VIEW` | Nhân viên | Xem danh sách nhân viên |
+| `STAFF_CREATE` | Nhân viên | Tạo nhân viên mới |
+| `STAFF_EDIT` | Nhân viên | Chỉnh sửa thông tin nhân viên |
+| `STAFF_DELETE` | Nhân viên | Vô hiệu hóa nhân viên |
+| `STAFF_MANAGE` | Nhân viên | Override quyền từng nhân viên |
+| `ROLE_MANAGE` | Vai trò | Quản lý vai trò và quyền |
+| `APPROVAL_VIEW` | Ký duyệt | Xem danh sách phê duyệt |
+| `TRANSFER_APPROVE` | Ký duyệt | Ký/từ chối phiếu điều chuyển |
+| `INVENTORY_APPROVE` | Ký duyệt | Ký/từ chối phiếu kiểm kê |
+| `CONFIG_SYSTEM` | Cấu hình | Quản lý cấu hình hệ thống |
+| `AUDIT_VIEW` | Log | Xem audit log |
+
+### Điều hướng frontend
+
+| Mục | Route | Quyền yêu cầu |
+|-----|-------|--------------|
+| Tổng quan | `/dashboard` | *(luôn hiển thị)* |
+| Tài sản | `/assets` | `ASSET_VIEW` |
+| Nhân viên | `/employees` | `STAFF_VIEW` |
+| Quản lý nhân viên | `/staff-management` | `STAFF_MANAGE` hoặc `ROLE_MANAGE` |
+| Vai trò & quyền | `/roles` | `ROLE_MANAGE` |
+| Ký duyệt | `/approvals` | `APPROVAL_VIEW` |
+| Thông báo | `/notifications` | *(luôn hiển thị)* |
+| Cấu hình | `/settings` | `SETTINGS_MANAGE` |
+| Giám sát log | `/audit` | `AUDIT_VIEW` |
+| Tài khoản | `/profile` | *(luôn hiển thị)* |
+
+> **ADMIN role** bypass tất cả kiểm tra quyền ở backend (`PermissionsGuard`) và thấy toàn bộ menu ở frontend.
+
+---
+
+## 11. Demo Mode
+
+Khi backend không chạy hoặc không kết nối được DB:
+
+- Frontend **tự động** phát hiện lỗi API và dùng `mockData.ts` làm fallback.
+- Mọi thao tác CRUD hoạt động trên dữ liệu local trong bộ nhớ.
+- Badge **DEMO** màu cam xuất hiện trên topbar.
+- Badge **API** màu xanh khi kết nối backend thành công.
+- Bấm **"Dùng Demo"** trên màn hình login → vào ngay với quyền Admin, không cần server.
+
+---
+
+## 12. Bảo Mật
+
+### Đã triển khai
+
+| Hạng mục | Chi tiết |
+|----------|---------|
+| Bcrypt password hashing | 12 salt rounds |
+| JWT authentication | HS256, access 24h + refresh 7d |
+| Refresh token rotation | One-time use, hash lưu DB, revoke ngay khi dùng |
+| RBAC | `PermissionsGuard` trên toàn bộ protected routes |
+| SQL injection | Parameterized queries (`mysql2` `execute()`) |
+| Input validation | `class-validator` + `ValidationPipe` (whitelist, forbidNonWhitelisted) |
+| XSS | Không render HTML từ user input |
+| Audit logging | Ghi lại toàn bộ hành động quan trọng |
+
+### Chưa triển khai (cần bổ sung)
+
+| Hạng mục | Ưu tiên |
+|----------|:-------:|
+| Rate limiting (`@nestjs/throttler`) | 🔴 Cao |
+| Security headers (Helmet) | 🔴 Cao |
+| CORS cấu hình chính xác (hiện `enableCors()` cho phép tất cả) | 🟡 Trung bình |
+| Database indexes tối ưu | 🟡 Trung bình |
+
+---
+
+## 13. Tài Khoản Test
+
+| Email | Mật khẩu | Vai trò | Quyền |
+|-------|:--------:|---------|-------|
+| `admin@example.com` | `123456` | ADMIN | Toàn quyền |
+| `manager@example.com` | `123456` | MANAGER | Quản lý phòng ban |
+| `accountant@example.com` | `123456` | ACCOUNTANT | Xem & báo cáo tài sản |
+| `staff@example.com` | `123456` | STAFF | Nhân viên cơ bản |
+
+> **Demo nhanh:** Bấm "Dùng Demo" trên màn hình đăng nhập để vào hệ thống với dữ liệu mẫu — không cần backend hay database.
+
+---
+
+## Scripts Tham Khảo
 
 ```bash
-npm run test          # Unit tests
-npm run test:cov      # Coverage report
-npm run test:e2e      # E2E tests
+# Backend
+npm run start:dev        # Dev mode (watch)
+npm run start:debug      # Debug mode
+npm run build            # Build production
+npm run start:prod       # Chạy production build
+npm run test             # Unit tests
+npm run test:cov         # Coverage report
+npm run test:e2e         # E2E tests
+npm run lint             # ESLint + fix
+
+# Frontend
+npm run frontend:dev     # Dev server (port 5173)
+npm run frontend:build   # Build production
+npm run frontend:preview # Preview production build
 ```
 
-### Tài Khoản Test Sẵn Có
-
-| Email                    | Mật khẩu | Vai trò    | Quyền hạn             |
-| ------------------------ | -------- | ---------- | --------------------- |
-| admin@example.com        | 123456   | ADMIN      | Toàn quyền (`*`)      |
-| manager@example.com      | 123456   | MANAGER    | Quản lý phòng ban     |
-| accountant@example.com   | 123456   | ACCOUNTANT | Xem & báo cáo tài sản |
-| staff@example.com        | 123456   | STAFF      | Nhân viên cơ bản      |
-
-> Đăng nhập bằng tài khoản Demo: chọn nút **"Dùng Demo"** trên màn hình Login để vào ngay với quyền Admin, không cần backend.
-
-> Xem chi tiết 16 test cases tại [`docs/TEST_CASES.md`](https://github.com/khomuc/QuanLyTaiSan/blob/test/docs/TEST_CASES.md).
-
 ---
 
-## 10. Bảo Mật
-
-### Đã Triển Khai ✅
-
-| Hạng Mục                 | Chi Tiết                             |
-| ------------------------ | ------------------------------------ |
-| Bcrypt password hashing  | Salt rounds mặc định                 |
-| JWT authentication       | HS256, 24h expiry                    |
-| RBAC system              | Guard + Decorator trên mọi endpoint  |
-| SQL injection prevention | TypeORM parameterized queries        |
-| XSS protection           | Input validation với class-validator |
-| Input sanitization       | DTO validation toàn bộ request body  |
-
-### Cần Bổ Sung ⚠️
-
-| Hạng Mục                            | Ưu tiên      |
-| ----------------------------------- | ------------ |
-| Rate limiting (`@nestjs/throttler`) | 🔴 Cao        |
-| Security headers (Helmet)           | 🔴 Cao        |
-| Refresh token flow                  | 🔴 Cao        |
-| CORS configuration chính xác        | 🟡 Trung bình |
-| Database indexes tối ưu             | 🟡 Trung bình |
-
-> **Đánh giá bảo mật hiện tại: 84/100** — Xem chi tiết tại `docs/SECURITY_AUDIT.md`.
-
----
-
-## 11. Tiến Độ Phát Triển
-
-### Team Lead (Nguyễn Thị Huỳnh Như)
-
-| Tính Năng                                               | Tiến Độ     |
-| ------------------------------------------------------- | ----------- |
-| Frontend Setup (React 19 + Vite 6 + TypeScript)         | ✅ 100%      |
-| Authentication & JWT (`AuthContext`)                    | ✅ 100%      |
-| RBAC & Permissions                                      | ✅ 100%      |
-| Dashboard                                               | ✅ 100%      |
-| Profile Management                                      | ✅ 100%      |
-| Employee Management                                     | ✅ 100%      |
-| Staff Permission Override (`StaffManagementPage`)       | ✅ 100%      |
-| System Configuration                                    | ✅ 100%      |
-| Audit Logging                                           | ✅ 100%      |
-| Approval Workflow                                       | ✅ 100%      |
-| Frontend Refactoring (AppContent, Sidebar, AppLayout)   | ✅ 100%      |
-| Demo Mode (offline fallback + apiMode indicator)        | ✅ 100%      |
-| Email Service (SMTP/Gmail/SendGrid)                     | ⚠️ 85%      |
-| Test Cases (16 cases)                                   | ⚠️ 30%      |
-| Security Hardening                                      | ⚠️ 40%      |
-| CI/CD Pipeline                                          | ⚠️ 40%      |
-| **OVERALL**                                             | **⚠️ ~78%** |
-
-### Hiệu Năng Frontend
-
-- Bundle size: ~150 KB (sau code splitting)
-- `React.lazy()` + `Suspense` cho tất cả 11 trang
-- `useMemo()` cho filter/search nặng
-- Sidebar trạng thái persist trong `localStorage` (`sidebar-collapsed`)
-- Tất cả API phản hồi < 500 ms
-
----
-
-## 12. Tài Liệu Liên Quan
-
-| Tài liệu                                                                                          | Mô tả                                            |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| [`docs/LOGIN_GUIDE.md`](https://github.com/khomuc/QuanLyTaiSan/blob/test/docs/LOGIN_GUIDE.md)    | Hướng dẫn đăng nhập, phân quyền, troubleshooting |
-| [`docs/TEST_CASES.md`](https://github.com/khomuc/QuanLyTaiSan/blob/test/docs/TEST_CASES.md)      | 16 test cases theo nhóm chức năng                |
-| [`docs/SECURITY_AUDIT.md`](https://github.com/khomuc/QuanLyTaiSan/blob/test/docs/SECURITY_AUDIT.md) | Đánh giá bảo mật chi tiết                     |
-| [`.env.example`](https://github.com/khomuc/QuanLyTaiSan/blob/test/.env.example)                  | Template cấu hình môi trường                     |
-
----
-
-*Maintained by: **Nguyễn Thị Huỳnh Như** ([@nnhuwz03](https://github.com/nnhuwz03)) — Team Lead*  
-*Mọi câu hỏi vui lòng tạo Issue trên GitHub.*
+*Maintained by Team Lead: **Nguyễn Thị Huỳnh Như** — [@nnhuwz03](https://github.com/nnhuwz03)*
