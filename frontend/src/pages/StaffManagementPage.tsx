@@ -149,11 +149,14 @@ export default function StaffManagementPage() {
     if (!selectedEmployee) return;
     setSaving(true);
     try {
-      // TODO: replace with api.overrideEmployeePermissions(...)
-      await new Promise((r) => setTimeout(r, 600));
+      await api.overrideEmployeePermissions(
+        selectedEmployee.maNhanVien,
+        selectedPerms,
+      );
       showToast('Đã cập nhật quyền hạn thành công!', 'success');
-    } catch {
-      showToast('Lỗi: Không thể cập nhật quyền hạn', 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Lỗi: Không thể cập nhật quyền hạn — ${msg}`, 'error');
     } finally {
       setSaving(false);
     }
