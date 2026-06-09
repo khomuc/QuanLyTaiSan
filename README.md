@@ -248,7 +248,7 @@ npm run frontend:build
 
 ## 6. Cấu Hình Môi Trường
 
-File `.env` (copy từ `.env.example`):
+File `.env.example` (minh họa):
 
 ```dotenv
 # ── Database ─────────────────────────────────────────
