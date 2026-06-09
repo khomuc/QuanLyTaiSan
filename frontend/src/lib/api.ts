@@ -266,6 +266,16 @@ export const api = {
     });
   },
 
+  overrideEmployeePermissions(maNhanVien: string, maQuyen: string[]) {
+    return request<{ message: string }>(
+      `/employees/${encodeURIComponent(maNhanVien)}/permissions`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ maQuyen }),
+      },
+    );
+  },
+
   approvals() {
     return request<ApprovalItem[]>('/approvals/pending');
   },
