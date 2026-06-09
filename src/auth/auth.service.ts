@@ -299,7 +299,13 @@ export class AuthService {
     );
     const empCodes = empRows.map((row) => String(row.MaQuyen));
 
-    return Array.from(new Set([...roleCodes, ...empCodes])).sort();
+    // BUG FIX: Nếu nhân viên có quyền riêng được lưu trong NHAN_VIEN_QUYEN,
+    // dùng TOÀN BỘ những quyền đó (override/thay thế quyền của vai trò).
+    // Nếu chưa có override nào, kế thừa từ vai trò như bình thường.
+    if (empCodes.length > 0) {
+      return empCodes;
+    }
+    return roleCodes;
   }
 
   async signToken(user: AuthUser): Promise<string> {
