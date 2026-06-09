@@ -133,10 +133,23 @@ export default function StaffManagementPage() {
 
   // ── actions ─────────────────────────────────────────────────────────────
 
-  function handleSelectEmployee(emp: Employee) {
+  async function handleSelectEmployee(emp: Employee) {
     setSelectedEmployee(emp);
+    // Hiển thị quyền từ vai trò trước (fallback tức thì, không chờ API)
     const role = roles.find((r) => r.maVaiTro === emp.maVaiTro);
     setSelectedPerms(role?.permissions ?? []);
+
+    // Sau đó fetch quyền riêng của nhân viên từ backend
+    try {
+      const result = await api.getEmployeePermissions(emp.maNhanVien);
+      if (result.hasOverride) {
+        // Nhân viên đã được cấu hình quyền riêng → dùng những quyền đó
+        setSelectedPerms(result.permissions);
+      }
+      // Nếu !result.hasOverride → giữ nguyên quyền từ vai trò đã set ở trên
+    } catch {
+      // Nếu API lỗi → giữ quyền từ vai trò (đã set ở trên), không hiển thị lỗi
+    }
   }
 
   function togglePerm(id: string) {
@@ -250,7 +263,7 @@ export default function StaffManagementPage() {
                 return (
                   <button
                     key={emp.maNhanVien}
-                    onClick={() => handleSelectEmployee(emp)}
+                    onClick={() => void handleSelectEmployee(emp)}
                     style={{
                       width: '100%',
                       display: 'grid',
