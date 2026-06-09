@@ -196,6 +196,47 @@ export class EmployeesService {
     return { message: 'Employee deactivated successfully' };
   }
 
+  async overridePermissions(
+    maNhanVien: string,
+    maQuyen: string[],
+    user: AuthUser,
+  ) {
+    await this.findOne(maNhanVien);
+
+    const connection = await this.db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      await connection.execute(
+        'DELETE FROM NHAN_VIEN_QUYEN WHERE MaNhanVien = ?',
+        [maNhanVien],
+      );
+
+      for (const quyen of maQuyen) {
+        await connection.execute(
+          'INSERT INTO NHAN_VIEN_QUYEN (MaNhanVien, MaQuyen) VALUES (?, ?)',
+          [maNhanVien, quyen],
+        );
+      }
+
+      await connection.execute(
+        `INSERT INTO AUDIT_LOG
+         (MaNhanVien, HanhDong, DoiTuong, DoiTuongId, TrangThai, ChiTiet)
+         VALUES (?, 'STAFF_OVERRIDE_PERMISSIONS', 'NHAN_VIEN', ?, 'SUCCESS', ?)`,
+        [user.maNhanVien, maNhanVien, `Override ${maQuyen.length} permissions`],
+      );
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+    return { message: 'Permissions updated successfully', count: maQuyen.length };
+  }
+
   async listDepartments() {
     const [rows] = await this.db.execute<RowDataPacket[]>(
       `SELECT MaPhongBan AS maPhongBan, TenPhongBan AS tenPhongBan
