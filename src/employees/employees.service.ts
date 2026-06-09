@@ -196,6 +196,23 @@ export class EmployeesService {
     return { message: 'Employee deactivated successfully' };
   }
 
+  async getEmployeePermissions(maNhanVien: string) {
+    await this.findOne(maNhanVien); // đảm bảo nhân viên tồn tại
+
+    const [rows] = await this.db.execute<RowDataPacket[]>(
+      `SELECT MaQuyen FROM NHAN_VIEN_QUYEN WHERE MaNhanVien = ? ORDER BY MaQuyen`,
+      [maNhanVien],
+    );
+
+    const permissions = rows.map((row) => String(row.MaQuyen));
+
+    return {
+      maNhanVien,
+      permissions,
+      hasOverride: permissions.length > 0,
+    };
+  }
+
   async overridePermissions(
     maNhanVien: string,
     maQuyen: string[],

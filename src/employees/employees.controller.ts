@@ -49,6 +49,12 @@ export class EmployeesController {
     return this.employeesService.findOne(maNhanVien);
   }
 
+  @Get(':maNhanVien/permissions')
+  @Permissions('STAFF_MANAGE', 'ROLE_MANAGE')
+  getPermissions(@Param('maNhanVien') maNhanVien: string) {
+    return this.employeesService.getEmployeePermissions(maNhanVien);
+  }
+
   @Patch(':maNhanVien')
   @Permissions('STAFF_EDIT')
   update(
