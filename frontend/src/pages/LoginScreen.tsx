@@ -77,7 +77,7 @@ export default function LoginScreen({
           </button>
           <button
             className="secondary-button"
-            onClick={() => onSuccess({ accessToken: 'demo-token', tokenType: 'Bearer', user: demo.demoUser })}
+            onClick={() => onSuccess({ accessToken: 'demo-token', refreshToken: 'demo-refresh-token', tokenType: 'Bearer', user: demo.demoUser })}
             type="button"
           >
             Mo giao dien demo
