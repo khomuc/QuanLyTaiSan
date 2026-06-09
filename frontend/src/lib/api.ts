@@ -18,6 +18,7 @@ import type {
 
 const API_BASE = '/api';
 const TOKEN_KEY = 'qlts_access_token';
+const REFRESH_TOKEN_KEY = 'qlts_refresh_token';
 
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -29,6 +30,44 @@ export function setStoredToken(token: string) {
 
 export function clearStoredToken() {
   localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getStoredRefreshToken() {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setStoredRefreshToken(token: string) {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
+export function clearStoredRefreshToken() {
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+// ── Refresh token rotation state ────────────────────────────────────────────
+let isRefreshing = false;
+let refreshQueue: Array<(newAccessToken: string) => void> = [];
+
+async function doRefresh(): Promise<string> {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) throw new Error('No refresh token');
+
+  const response = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) throw new Error('Refresh failed');
+
+  const data = (await response.json()) as {
+    accessToken: string;
+    refreshToken: string;
+  };
+
+  setStoredToken(data.accessToken);
+  setStoredRefreshToken(data.refreshToken);
+  return data.accessToken;
 }
 
 async function request<T>(
@@ -47,6 +86,39 @@ async function request<T>(
     ...options,
     headers,
   });
+
+  // ── Auto-refresh on 401 ────────────────────────────────────────────────────
+  if (
+    response.status === 401 &&
+    path !== '/auth/login' &&
+    path !== '/auth/refresh'
+  ) {
+    if (isRefreshing) {
+      // Queue this request until the ongoing refresh finishes
+      return new Promise<T>((resolve, reject) => {
+        refreshQueue.push((newToken) => {
+          request<T>(path, options, newToken).then(resolve).catch(reject);
+        });
+      });
+    }
+
+    isRefreshing = true;
+    try {
+      const newAccessToken = await doRefresh();
+      refreshQueue.forEach((cb) => cb(newAccessToken));
+      refreshQueue = [];
+      return request<T>(path, options, newAccessToken);
+    } catch {
+      // Refresh failed — clear everything and force re-login
+      clearStoredToken();
+      clearStoredRefreshToken();
+      window.location.href = '/';
+      throw new Error('Session expired. Please log in again.');
+    } finally {
+      isRefreshing = false;
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   if (!response.ok) {
     const body = await response.text();
@@ -70,6 +142,24 @@ export const api = {
       },
       null,
     );
+  },
+
+  refresh(refreshToken: string) {
+    return request<{ accessToken: string; refreshToken: string; tokenType: string }>(
+      '/auth/refresh',
+      {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      },
+      null,
+    );
+  },
+
+  logout(refreshToken: string) {
+    return request<{ message: string }>('/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
   },
 
   me() {
@@ -174,6 +264,22 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ maQuyen }),
     });
+  },
+
+  overrideEmployeePermissions(maNhanVien: string, maQuyen: string[]) {
+    return request<{ message: string }>(
+      `/employees/${encodeURIComponent(maNhanVien)}/permissions`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ maQuyen }),
+      },
+    );
+  },
+
+  getEmployeePermissions(maNhanVien: string) {
+    return request<{ maNhanVien: string; permissions: string[]; hasOverride: boolean }>(
+      `/employees/${encodeURIComponent(maNhanVien)}/permissions`,
+    );
   },
 
   approvals() {

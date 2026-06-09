@@ -1,5 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { api, getStoredToken, setStoredToken, clearStoredToken } from '../lib/api';
+import {
+  api,
+  getStoredToken,
+  setStoredToken,
+  clearStoredToken,
+  getStoredRefreshToken,
+  setStoredRefreshToken,
+  clearStoredRefreshToken,
+} from '../lib/api';
 import type { AuthUser, LoginResult } from '../lib/types';
 
 export interface AuthContextType {
@@ -68,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<LoginResult> => {
     const result = await api.login(email, password);
     setStoredToken(result.accessToken || '');
+    setStoredRefreshToken(result.refreshToken || '');
     setToken(result.accessToken || '');
     setUser(result.user);
     return result;
@@ -75,12 +84,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginSuccess = (result: LoginResult) => {
     setStoredToken(result.accessToken || '');
+    setStoredRefreshToken(result.refreshToken || '');
     setToken(result.accessToken || '');
     setUser(result.user);
   };
 
   const logout = () => {
+    const refreshToken = getStoredRefreshToken();
+    // Revoke refresh token on backend (fire-and-forget — don't block UI)
+    if (refreshToken) {
+      api.logout(refreshToken).catch(() => {
+        // Silently ignore — token may already be expired
+      });
+    }
     clearStoredToken();
+    clearStoredRefreshToken();
     setToken(null);
     setUser(null);
   };

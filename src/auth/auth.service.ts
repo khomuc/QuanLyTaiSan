@@ -62,7 +62,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid login information');
     }
 
-    const permissions = await this.getPermissions(employee.MaVaiTro);
+    const permissions = await this.getPermissions(employee.MaVaiTro, employee.MaNhanVien);
     const user = this.toAuthUser(employee, permissions);
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -145,7 +145,7 @@ export class AuthService {
     }
 
     // 5. Issue new token pair
-    const permissions = await this.getPermissions(employee.MaVaiTro);
+    const permissions = await this.getPermissions(employee.MaVaiTro, employee.MaNhanVien);
     const user = this.toAuthUser(employee, permissions);
 
     const [newAccessToken, newRefreshToken] = await Promise.all([
@@ -194,7 +194,7 @@ export class AuthService {
       throw new NotFoundException('Employee not found');
     }
 
-    const permissions = await this.getPermissions(employee.MaVaiTro);
+    const permissions = await this.getPermissions(employee.MaVaiTro, employee.MaNhanVien);
     return {
       ...this.sanitizeEmployee(employee),
       permissions,
@@ -278,16 +278,34 @@ export class AuthService {
     return rows;
   }
 
-  async getPermissions(maVaiTro: string): Promise<string[]> {
-    const [rows] = await this.db.execute<RowDataPacket[]>(
+  async getPermissions(maVaiTro: string, maNhanVien?: string): Promise<string[]> {
+    const [roleRows] = await this.db.execute<RowDataPacket[]>(
       `SELECT MaQuyen
        FROM VAI_TRO_QUYEN
        WHERE MaVaiTro = ?
        ORDER BY MaQuyen`,
       [maVaiTro],
     );
+    const roleCodes = roleRows.map((row) => String(row.MaQuyen));
 
-    return rows.map((row) => String(row.MaQuyen));
+    if (!maNhanVien) return roleCodes;
+
+    const [empRows] = await this.db.execute<RowDataPacket[]>(
+      `SELECT MaQuyen
+       FROM NHAN_VIEN_QUYEN
+       WHERE MaNhanVien = ?
+       ORDER BY MaQuyen`,
+      [maNhanVien],
+    );
+    const empCodes = empRows.map((row) => String(row.MaQuyen));
+
+    // BUG FIX: Nếu nhân viên có quyền riêng được lưu trong NHAN_VIEN_QUYEN,
+    // dùng TOÀN BỘ những quyền đó (override/thay thế quyền của vai trò).
+    // Nếu chưa có override nào, kế thừa từ vai trò như bình thường.
+    if (empCodes.length > 0) {
+      return empCodes;
+    }
+    return roleCodes;
   }
 
   async signToken(user: AuthUser): Promise<string> {

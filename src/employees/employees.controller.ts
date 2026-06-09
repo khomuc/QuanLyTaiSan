@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -48,6 +49,12 @@ export class EmployeesController {
     return this.employeesService.findOne(maNhanVien);
   }
 
+  @Get(':maNhanVien/permissions')
+  @Permissions('STAFF_MANAGE', 'ROLE_MANAGE')
+  getPermissions(@Param('maNhanVien') maNhanVien: string) {
+    return this.employeesService.getEmployeePermissions(maNhanVien);
+  }
+
   @Patch(':maNhanVien')
   @Permissions('STAFF_EDIT')
   update(
@@ -65,5 +72,19 @@ export class EmployeesController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.employeesService.remove(maNhanVien, user);
+  }
+
+  @Put(':maNhanVien/permissions')
+  @Permissions('STAFF_MANAGE', 'ROLE_MANAGE')
+  overridePermissions(
+    @Param('maNhanVien') maNhanVien: string,
+    @Body() dto: { maQuyen: string[] },
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.employeesService.overridePermissions(
+      maNhanVien,
+      dto.maQuyen,
+      user,
+    );
   }
 }
