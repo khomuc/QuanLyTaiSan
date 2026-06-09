@@ -147,6 +147,16 @@ export const api = {
     );
   },
 
+  overrideEmployeePermissions(maNhanVien: string, maQuyen: string[]) {
+    return request<{ message: string; count: number }>(
+      `/employees/${encodeURIComponent(maNhanVien)}/permissions`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ maQuyen }),
+      },
+    );
+  },
+
   roles() {
     return request<Role[]>('/roles');
   },
