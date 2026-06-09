@@ -276,6 +276,12 @@ export const api = {
     );
   },
 
+  getEmployeePermissions(maNhanVien: string) {
+    return request<{ maNhanVien: string; permissions: string[]; hasOverride: boolean }>(
+      `/employees/${encodeURIComponent(maNhanVien)}/permissions`,
+    );
+  },
+
   approvals() {
     return request<ApprovalItem[]>('/approvals/pending');
   },
