@@ -1,6 +1,5 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -49,7 +48,8 @@ async function bootstrap() {
   );
 
   // ─── Global Rate Limiting (Throttler) ────────────────────────────────────
-  app.useGlobalGuards(new ThrottlerGuard());
+  // ThrottlerGuard được đăng ký global qua APP_GUARD trong AppModule
+  // (không thể `new ThrottlerGuard()` trực tiếp vì cần Nest inject dependency)
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(
