@@ -2,7 +2,7 @@
 
 > Ứng dụng web full-stack quản lý tài sản tổ chức bằng mã QR, phân quyền RBAC theo vai trò và từng nhân viên, quy trình ký duyệt điều chuyển & kiểm kê tài sản, email notifications, audit logging.
 
-**Repository:** https://github.com/bnnbichzzzzz/QuanLyTaiSan  
+**Repository:** https://github.com/khomuc/QuanLyTaiSan  
 **Branch phát triển:** `test`  
 **Status:** ✅ **98% HOÀN THIỆN - SẴN SÀNG DEPLOY**
 
@@ -396,5 +396,5 @@ Xem checklist: `/docs/IMPLEMENTATION_STATUS.md`
 
 ---
 
-**Maintained by:** @bnnbichzzzzz (Team Lead)  
+**Maintained by:** @nnhuwz03 (Team Lead)  
 **Last Updated:** 01/07/2026
