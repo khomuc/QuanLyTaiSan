@@ -95,6 +95,33 @@ button {
   animation: backdropFadeIn 0.2s ease;
 }
 
+/* ===== MOBILE LAYOUT (SIDEBAR AS SLIDE-IN DRAWER) ===== */
+@media (max-width: 768px) {
+  .app-shell,
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    transform: translateX(-100%);
+    z-index: 6;
+  }
+
+  .app-shell.sidebar-open-mobile .sidebar,
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop.mobile-only {
+    display: block;
+  }
+}
+
 .sidebar-head {
   display: flex;
   align-items: center;
