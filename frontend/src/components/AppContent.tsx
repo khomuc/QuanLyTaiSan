@@ -5,7 +5,7 @@ import { AppLayout } from './AppLayout';
 import { EmployeeModal } from './EmployeeModal';
 import { Toast } from './Toast';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../lib/api';
+import { api, getStoredToken } from '../lib/api';
 import * as demo from '../lib/mockData';
 import { getVisibleNavItems } from '../lib/navigation';
 import type {
@@ -97,6 +97,15 @@ export function AppContent() {
   // ── Data loading ──────────────────────────────────────────────────────────
 
   async function loadView(viewName: string) {
+    // Demo mode: never hit the real API. Using a fake demo token against the
+    // backend returns 401, which triggers the auto-refresh flow with a fake
+    // refresh token, fails, and force-redirects back to '/' (login screen).
+    if (getStoredToken() === 'demo-token') {
+      loadDemoView(viewName);
+      setApiMode('demo');
+      return;
+    }
+
     setLoading(true);
     try {
       if (viewName === 'dashboard') {
