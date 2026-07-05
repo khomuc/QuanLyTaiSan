@@ -91,7 +91,8 @@ async function request<T>(
   if (
     response.status === 401 &&
     path !== '/auth/login' &&
-    path !== '/auth/refresh'
+    path !== '/auth/refresh' &&
+    token !== 'demo-token'
   ) {
     if (isRefreshing) {
       // Queue this request until the ongoing refresh finishes
