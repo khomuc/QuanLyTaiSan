@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { MYSQL_CONNECTION } from '../common/constants';
+import { AuthUser } from '../common/interfaces/auth-user.interface';
 
 interface CountRow extends RowDataPacket {
   total: number | string;
@@ -26,7 +27,7 @@ interface RecentAuditLogRow extends RowDataPacket {
 export class DashboardService {
   constructor(@Inject(MYSQL_CONNECTION) private readonly db: Pool) {}
 
-  async getOverview() {
+  async getOverview(user: AuthUser) {
     const [
       totalEmployees,
       employeesByStatus,
@@ -43,12 +44,14 @@ export class DashboardService {
       this.scalar(
         `SELECT COUNT(*) AS total
          FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN
-         WHERE TrangThaiKy = 'CHO_KY'`,
+         WHERE TrangThaiKy = 'CHO_KY' AND (MaNhanVien = ? OR ?)`,
+         [user.maNhanVien, user.maVaiTro === 'ADMIN' ? 1 : 0]
       ),
       this.scalar(
         `SELECT COUNT(*) AS total
          FROM PHIEU_KIEM_KE_NHAN_VIEN
-         WHERE TrangThaiKy = 'CHO_KY'`,
+         WHERE TrangThaiKy = 'CHO_KY' AND (MaNhanVien = ? OR ?)`,
+         [user.maNhanVien, user.maVaiTro === 'ADMIN' ? 1 : 0]
       ),
       this.recentAuditLogs(),
     ]);
@@ -71,8 +74,8 @@ export class DashboardService {
     };
   }
 
-  private async scalar(sql: string): Promise<number> {
-    const [rows] = await this.db.query<CountRow[]>(sql);
+  private async scalar(sql: string, params: any[] = []): Promise<number> {
+    const [rows] = await this.db.query<CountRow[]>(sql, params);
     return Number(rows[0]?.total ?? 0);
   }
 

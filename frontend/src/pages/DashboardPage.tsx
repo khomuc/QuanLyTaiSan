@@ -7,7 +7,7 @@ export default function DashboardPage({
   onNavigate,
 }: {
   data: DashboardOverview;
-  onNavigate: (view: ViewKey) => void;
+  onNavigate: (view: string) => void;
 }) {
   return (
     <div className="page-grid">
@@ -28,7 +28,7 @@ export default function DashboardPage({
       <KpiTile
         icon={ClipboardCheck}
         label="Cho ky duyet"
-        onClick={() => onNavigate('approvals')}
+        onClick={() => onNavigate('transfer?tab=approve')}
         tone="red"
         value={data.approvals.totalPending}
       />

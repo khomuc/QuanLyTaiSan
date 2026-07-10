@@ -322,4 +322,47 @@ export const api = {
     const query = search ? `?search=${encodeURIComponent(search)}` : '';
     return request<AuditLogList>(`/audit-logs${query}`);
   },
+
+  listTransferSlips() {
+    return request<any[]>('/transfer/slips');
+  },
+
+  getTransferSlip(soPhieu: string) {
+    return request<any>(`/transfer/slips/${encodeURIComponent(soPhieu)}`);
+  },
+
+  transferHistory() {
+    return request<any>('/transfer/reports/history');
+  },
+
+  reportsAssets() {
+    return request<any>('/reports/assets');
+  },
+
+  reportsTransfers(filters?: { tuNgay?: string; denNgay?: string; maPhongBan?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.tuNgay) params.append('tuNgay', filters.tuNgay);
+    if (filters?.denNgay) params.append('denNgay', filters.denNgay);
+    if (filters?.maPhongBan) params.append('maPhongBan', filters.maPhongBan);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return request<any>(`/reports/transfers${query}`);
+  },
+
+  reportsInventory() {
+    return request<any>('/reports/inventory');
+  },
+
+  createTransferSlip(payload: any) {
+    return request<any>('/transfer/slips', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  confirmReceiptTransferSlip(soPhieu: string, payload: any) {
+    return request<any>(`/transfer/slips/${encodeURIComponent(soPhieu)}/confirm-receipt`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };

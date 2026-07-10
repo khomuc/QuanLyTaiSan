@@ -9,6 +9,8 @@ import {
   Settings,
   FileClock,
   User,
+  ArrowRightLeft,
+  BarChart3,
   type LucideIcon,
 } from 'lucide-react';
 import type { AuthUser } from './types';
@@ -32,6 +34,12 @@ const allNavItems: NavItem[] = [
     label: 'Tài sản',
     icon: PackageSearch,
     requiredPermissions: ['ASSET_VIEW'],
+  },
+  {
+    key: 'transfer',
+    label: 'Điều chuyển',
+    icon: ArrowRightLeft,
+    requiredPermissions: ['TRANSFER_VIEW'],
   },
   {
     key: 'employees',
@@ -61,6 +69,12 @@ const allNavItems: NavItem[] = [
     key: 'notifications',
     label: 'Thông báo',
     icon: Bell,
+  },
+  {
+    key: 'reports',
+    label: 'Báo cáo & Thống kê',
+    icon: BarChart3,
+    requiredPermissions: ['TRANSFER_VIEW'],
   },
   {
     key: 'settings',

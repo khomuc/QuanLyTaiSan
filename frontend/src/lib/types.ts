@@ -7,9 +7,9 @@ export type ViewKey =
   | 'roles'
   | 'approvals'
   | 'notifications'
-  | 'settings'
   | 'audit'
-  | 'profile';
+  | 'profile'
+  | 'transfer';
 
 export interface AuthUser {
   maNhanVien: string;
@@ -206,4 +206,31 @@ export interface AuditLogList {
     total: number;
     totalPages: number;
   };
+}
+
+export interface TransferSlip {
+  SoPhieu: string;
+  NgayDieuChuyen: string | null;
+  TrangThaiDuyet: string;
+  NguoiLapTen?: string;
+  NguoiLap: string;
+  TongTaiSan?: number;
+}
+
+export interface TransferItem {
+  SoPhieu: string;
+  TenTaiSan: string;
+  TuPhongBanTen?: string;
+  TuPhongBan?: string;
+  DenPhongBanTen?: string;
+  DenPhongBan?: string;
+  LyDo?: string;
+  NguoiLapTen?: string;
+  NguoiLap?: string;
+  NgayDieuChuyen?: string;
+}
+
+export interface TransferHistory {
+  summary: any[];
+  items: TransferItem[];
 }

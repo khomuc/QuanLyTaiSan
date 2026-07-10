@@ -14,6 +14,8 @@ import { MailerModule } from './mailer/mailer.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RolesModule } from './roles/roles.module';
 import { SettingsModule } from './settings/settings.module';
+import { TransferModule } from './transfer/transfer.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -34,7 +36,9 @@ import { SettingsModule } from './settings/settings.module';
     NotificationsModule,
     SettingsModule,
     AuditLogsModule,
+    TransferModule,
     MailerModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

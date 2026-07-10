@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { AppLayout } from './AppLayout';
 import { EmployeeModal } from './EmployeeModal';
 import { Toast } from './Toast';
+import type { ToastData } from './Toast';
 import { useAuth } from '../contexts/AuthContext';
 import { api, getStoredToken } from '../lib/api';
 import * as demo from '../lib/mockData';
@@ -36,6 +37,8 @@ const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const AuditPage = lazy(() => import('../pages/AuditPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const TransferPage = lazy(() => import('../pages/TransferPage'));
+const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 
 const emptyEmployee: EmployeeForm = {
   maNhanVien: '',
@@ -58,7 +61,7 @@ export function AppContent() {
 
   const [apiMode, setApiMode] = useState<ApiMode>(authApiMode || 'api');
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState<ToastData | null>(null);
 
   const [dashboard, setDashboard] = useState<DashboardOverview>(demo.dashboard);
   const [assets, setAssets] = useState<Asset[]>(demo.assets);
@@ -71,6 +74,8 @@ export function AppContent() {
   const [notifications, setNotifications] = useState<NotificationItem[]>(demo.notifications);
   const [settings, setSettings] = useState<SystemSettings>(demo.settings);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(demo.auditLogs.data);
+  const [transferSlips, setTransferSlips] = useState<any[]>([]);
+  const [transferHistoryData, setTransferHistoryData] = useState<any>({ summary: [], items: [] });
 
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [assetSearch, setAssetSearch] = useState('');
@@ -147,6 +152,25 @@ export function AppContent() {
         const [, departmentList] = await Promise.all([api.me(), api.profileDepartments()]);
         setDepartments(departmentList);
       }
+      if (viewName === 'reports') {
+        setTransferHistoryData(await api.transferHistory());
+      }
+      if (viewName === 'transfer') {
+        const [assetList, empList, deptList, slipList, hist, approvalList] = await Promise.all([
+          api.assets(),
+          api.employees(),
+          api.departments(),
+          api.listTransferSlips(),
+          api.transferHistory(),
+          api.approvals(),
+        ]);
+        setAssets(assetList.data);
+        setEmployees(empList.data);
+        setDepartments(deptList);
+        setTransferSlips(slipList);
+        setTransferHistoryData(hist);
+        setApprovals(approvalList);
+      }
       setApiMode('api');
     } catch {
       loadDemoView(viewName);
@@ -165,6 +189,16 @@ export function AppContent() {
     if (viewName === 'notifications') setNotifications(demo.notifications);
     if (viewName === 'settings') setSettings(demo.settings);
     if (viewName === 'audit') setAuditLogs(demo.auditLogs.data);
+    if (viewName === 'transfer') {
+      setAssets(demo.assets);
+      setEmployees(demo.employees);
+      setDepartments(demo.departments);
+      setTransferSlips([]);
+      setTransferHistoryData({ summary: [], items: [] });
+    }
+    if (viewName === 'reports') {
+      setTransferHistoryData({ summary: [], items: [] });
+    }
   }
 
   // Auto-load data whenever the route changes.
@@ -216,7 +250,7 @@ export function AppContent() {
         const created = await api.createEmployee({ ...payload, matKhau: employeeForm.matKhau || '123456' });
         setEmployees((cur) => [created, ...cur]);
       }
-      setToast('Đã lưu nhân viên');
+      setToast({ message: 'Đã lưu nhân viên' });
     } catch {
       const fallback: Employee = {
         maNhanVien: employeeForm.maNhanVien,
@@ -234,7 +268,7 @@ export function AppContent() {
         editingEmployee ? cur.map((e) => (e.maNhanVien === editingEmployee ? fallback : e)) : [fallback, ...cur],
       );
       setApiMode('demo');
-      setToast('Đã cập nhật trên dữ liệu demo');
+      setToast({ message: 'Đã cập nhật trên dữ liệu demo' });
     }
     setEmployeeModal(false);
   }
@@ -242,10 +276,10 @@ export function AppContent() {
   async function deactivateEmployee(maNhanVien: string) {
     try {
       await api.deleteEmployee(maNhanVien);
-      setToast('Đã khóa tài khoản nhân viên');
+      setToast({ message: 'Đã khóa tài khoản nhân viên' });
     } catch {
       setApiMode('demo');
-      setToast('Đã khóa trên dữ liệu demo');
+      setToast({ message: 'Đã khóa trên dữ liệu demo' });
     }
     setEmployees((cur) => cur.map((e) => (e.maNhanVien === maNhanVien ? { ...e, trangThai: 'INACTIVE' } : e)));
   }
@@ -257,53 +291,64 @@ export function AppContent() {
     try {
       const updated = await api.assignPermissions(selectedRole.maVaiTro, selectedPermissionIds);
       setRoles((cur) => cur.map((r) => (r.maVaiTro === updated.maVaiTro ? updated : r)));
-      setToast('Đã cập nhật quyền');
+      setToast({ message: 'Đã cập nhật quyền' });
     } catch {
       setRoles((cur) => cur.map((r) => (r.maVaiTro === selectedRole.maVaiTro ? { ...r, permissions: selectedPermissionIds } : r)));
       setApiMode('demo');
-      setToast('Đã cập nhật quyền trên dữ liệu demo');
+      setToast({ message: 'Đã cập nhật quyền trên dữ liệu demo' });
     }
   }
 
   async function signApproval(item: ApprovalItem, status: 'DA_KY' | 'TU_CHOI') {
     try {
       await api.signApproval(item, status);
-      setToast(status === 'DA_KY' ? 'Đã ký duyệt' : 'Đã từ chối');
-    } catch {
+      setToast({
+        message: status === 'DA_KY'
+          ? `Đã ký duyệt phiếu ${item.maPhieu}`
+          : `Đã từ chối phiếu ${item.maPhieu}`,
+        type: status === 'DA_KY' ? 'success' : 'error',
+      });
+      // Remove from pending approvals list immediately (optimistic)
+      setApprovals((cur) => cur.filter((a) => a.maPhieu !== item.maPhieu || a.loaiPhieu !== item.loaiPhieu));
+      // Reload transfer slips so the status in history table reflects the change
+      void loadView('transfer');
+    } catch (err) {
       setApiMode('demo');
-      setToast(status === 'DA_KY' ? 'Đã ký duyệt demo' : 'Đã từ chối demo');
+      setToast({ message: status === 'DA_KY' ? 'Đã ký duyệt demo' : 'Đã từ chối demo' });
+      setApprovals((cur) => cur.filter((a) => a.maPhieu !== item.maPhieu || a.loaiPhieu !== item.loaiPhieu));
+      throw err;
     }
-    setApprovals((cur) => cur.filter((a) => a.maPhieu !== item.maPhieu || a.loaiPhieu !== item.loaiPhieu));
   }
+
 
   async function saveSettings(nextSettings: SystemSettings) {
     try {
       setSettings(await api.updateSettings(nextSettings));
-      setToast('Đã lưu cấu hình');
+      setToast({ message: 'Đã lưu cấu hình' });
     } catch {
       setSettings(nextSettings);
       setApiMode('demo');
-      setToast('Đã lưu cấu hình demo');
+      setToast({ message: 'Đã lưu cấu hình demo' });
     }
   }
 
   async function saveProfile(payload: ProfileUpdatePayload) {
     try {
       await api.updateProfile(payload);
-      setToast('Đã cập nhật thông tin cá nhân');
+      setToast({ message: 'Đã cập nhật thông tin cá nhân' });
     } catch {
       setApiMode('demo');
-      setToast('Đã cập nhật thông tin demo');
+      setToast({ message: 'Đã cập nhật thông tin demo' });
     }
   }
 
   async function changePassword(oldPassword: string, newPassword: string) {
     try {
       await api.changePassword(oldPassword, newPassword);
-      setToast('Đã đổi mật khẩu');
+      setToast({ message: 'Đã đổi mật khẩu' });
     } catch {
       setApiMode('demo');
-      setToast('Chưa đổi được mật khẩu API');
+      setToast({ message: 'Chưa đổi được mật khẩu API' , type: 'error' });
     }
   }
 
@@ -456,6 +501,33 @@ export function AppContent() {
               </Suspense>
             }
           />
+          <Route
+            path="/transfer"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <TransferPage
+                  departments={departments}
+                  employees={employees}
+                  assets={assets}
+                  slips={transferSlips}
+                  history={transferHistoryData}
+                  approvals={approvals.filter(a => a.loaiPhieu === 'TRANSFER')}
+                  onSignApproval={signApproval}
+                  onRefresh={() => void loadView('transfer')}
+                  setToast={setToast}
+                  user={user}
+                />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <Suspense fallback={FALLBACK}>
+                <ReportsPage />
+              </Suspense>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
@@ -471,7 +543,15 @@ export function AppContent() {
           roles={roles}
         />
       )}
-      {toast && <Toast message={toast} onClose={() => setToast('')} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          action={toast.action}
+          duration={toast.duration}
+          onClose={() => setToast(null)}
+        />
+      )}
     </>
   );
 }

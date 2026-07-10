@@ -39,9 +39,26 @@ export function KpiTile({
   return <section className={`kpi-tile ${tone}`}>{content}</section>;
 }
 
-export function StatusPill({ value }: { value: string }) {
+const STATUS_MAP: Record<string, string> = {
+  cho_ky: 'Chờ duyệt',
+  da_ky: 'Đã duyệt',
+  tu_choi: 'Từ chối',
+  hoat_dong: 'Hoạt động',
+  bao_tri: 'Bảo trì',
+  hong: 'Hỏng',
+  queued: 'Đang xử lý',
+  active: 'Hoạt động',
+  inactive: 'Vô hiệu hóa',
+  da_duyet: 'Đã phê duyệt',
+  dang_luan_chuyen: 'Đang luân chuyển',
+  dang_su_dung: 'Đang sử dụng'
+};
+
+export function StatusPill({ value }: { value?: string }) {
+  if (!value) return <span className="status-pill unknown">...</span>;
   const normalized = value.toLowerCase();
-  return <span className={`status-pill ${normalized}`}>{value}</span>;
+  const displayText = STATUS_MAP[normalized] || value;
+  return <span className={`status-pill ${normalized}`}>{displayText}</span>;
 }
 
 export function Toggle({

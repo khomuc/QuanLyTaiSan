@@ -16,6 +16,7 @@ interface AppLayoutProps {
 const routeToKeyMap: Record<string, string> = {
   '/dashboard': 'dashboard',
   '/assets': 'assets',
+  '/transfer': 'transfer',
   '/employees': 'employees',
   '/staff-management': 'staff-management',
   '/roles': 'roles',
@@ -24,7 +25,10 @@ const routeToKeyMap: Record<string, string> = {
   '/settings': 'settings',
   '/audit': 'audit',
   '/profile': 'profile',
+  '/reports': 'reports',
 };
+
+
 
 export function AppLayout({
   user,
@@ -166,10 +170,6 @@ export function AppLayout({
           <Outlet />
         </main>
 
-        <footer className="footer">
-          <span>Quản lý tài sản QR</span>
-          <span>Nguyen Thi Huynh Nhu - B2204960</span>
-        </footer>
       </div>
     </div>
   );

@@ -30,6 +30,8 @@ export class ApprovalsService {
   ) {}
 
   async findPendingForUser(user: AuthUser) {
+    const isSystemAdmin = user.maVaiTro === 'ADMIN';
+
     const [transferRows] = await this.db.execute<PendingApprovalRow[]>(
       `SELECT 'TRANSFER' AS loaiPhieu, p.SoPhieu AS maPhieu, p.NgayDieuChuyen AS ngay,
               p.TrangThaiDuyet AS trangThaiPhieu, nv.HoTen AS nguoiLap,
@@ -37,9 +39,9 @@ export class ApprovalsService {
        FROM PHIEU_DIEU_CHUYEN_NHAN_VIEN pk
        INNER JOIN PHIEU_DIEU_CHUYEN p ON p.SoPhieu = pk.SoPhieu
        INNER JOIN NHAN_VIEN nv ON nv.MaNhanVien = p.NguoiLap
-       WHERE pk.MaNhanVien = ? AND pk.TrangThaiKy = 'CHO_KY'
+       WHERE (pk.MaNhanVien = ? OR ?) AND pk.TrangThaiKy = 'CHO_KY'
        ORDER BY pk.CreatedAt DESC`,
-      [user.maNhanVien],
+      [user.maNhanVien, isSystemAdmin ? 1 : 0],
     );
 
     const [inventoryRows] = await this.db.execute<PendingApprovalRow[]>(
@@ -49,9 +51,9 @@ export class ApprovalsService {
        FROM PHIEU_KIEM_KE_NHAN_VIEN pk
        INNER JOIN PHIEU_KIEM_KE p ON p.MaKiemKe = pk.MaKiemKe
        INNER JOIN NHAN_VIEN nv ON nv.MaNhanVien = p.NguoiLap
-       WHERE pk.MaNhanVien = ? AND pk.TrangThaiKy = 'CHO_KY'
+       WHERE (pk.MaNhanVien = ? OR ?) AND pk.TrangThaiKy = 'CHO_KY'
        ORDER BY pk.CreatedAt DESC`,
-      [user.maNhanVien],
+      [user.maNhanVien, isSystemAdmin ? 1 : 0],
     );
 
     return [...transferRows, ...inventoryRows].sort((a, b) => {
@@ -275,19 +277,22 @@ export class ApprovalsService {
       throw new BadRequestException('Reject reason is required');
     }
 
+    const isAdmin = user.maVaiTro === 'ADMIN';
+
     const [result] = await connection.execute<ResultSetHeader>(
       type === 'TRANSFER'
         ? `UPDATE PHIEU_DIEU_CHUYEN_NHAN_VIEN
            SET TrangThaiKy = ?, ThoiGianKy = NOW(), LyDoTuChoi = ?
-           WHERE SoPhieu = ? AND MaNhanVien = ? AND TrangThaiKy = 'CHO_KY'`
+           WHERE SoPhieu = ? AND (MaNhanVien = ? OR ?) AND TrangThaiKy = 'CHO_KY'`
         : `UPDATE PHIEU_KIEM_KE_NHAN_VIEN
            SET TrangThaiKy = ?, ThoiGianKy = NOW(), LyDoTuChoi = ?
-           WHERE MaKiemKe = ? AND MaNhanVien = ? AND TrangThaiKy = 'CHO_KY'`,
+           WHERE MaKiemKe = ? AND (MaNhanVien = ? OR ?) AND TrangThaiKy = 'CHO_KY'`,
       [
         dto.trangThaiKy,
         dto.trangThaiKy === 'TU_CHOI' ? (dto.lyDoTuChoi ?? null) : null,
         documentId,
         user.maNhanVien,
+        isAdmin ? 1 : 0,
       ],
     );
 
@@ -324,6 +329,18 @@ export class ApprovalsService {
          WHERE SoPhieu = ?`,
         [soPhieu],
       );
+
+      // Cập nhật trạng thái TAI_SAN thành DANG_LUAN_CHUYEN
+      const [items] = await connection.query<RowDataPacket[]>(
+        `SELECT MaTaiSan FROM CHI_TIET_PHIEU_DIEU_CHUYEN WHERE SoPhieu = ?`,
+        [soPhieu],
+      );
+      for (const item of items) {
+        await connection.execute(
+          `UPDATE TAI_SAN SET TrangThai = 'DANG_LUAN_CHUYEN' WHERE MaTaiSan = ?`,
+          [item.MaTaiSan],
+        );
+      }
     }
   }
 
