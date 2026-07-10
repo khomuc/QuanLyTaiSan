@@ -39,6 +39,18 @@ export interface Employee {
   updatedAt?: string;
 }
 
+export interface EmployeeForm {
+  maNhanVien: string;
+  hoTen: string;
+  chucVu: string;
+  email: string;
+  soDienThoai: string;
+  maPhongBan: string;
+  maVaiTro: string;
+  matKhau: string;
+  trangThai: Employee['trangThai'];
+}
+
 export interface EmployeeList {
   data: Employee[];
   meta: {
@@ -68,11 +80,44 @@ export interface Asset {
   ngayNhap: string;
   maPhongBanHienTai: string;
   tenPhongBan: string | null;
-  trangThai: 'HOAT_DONG' | 'BAO_TRI' | 'HONG';
+  trangThai:
+    | 'HOAT_DONG'
+    | 'BAO_TRI'
+    | 'HONG'
+    | 'DANG_LUAN_CHUYEN'
+    | 'DANG_SU_DUNG'
+    | 'THANH_LY';
   soHieuTSCD: string | null;
   ghiChu: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface AssetForm {
+  maTaiSan: string;
+  maQR: string;
+  tenTaiSan: string;
+  serial: string;
+  model: string;
+  maLoai: string;
+  nguyenGia: string;
+  haoMonLuyKe: string;
+  giaTriConLai: string;
+  ngayNhap: string;
+  maPhongBanHienTai: string;
+  trangThai: Asset['trangThai'];
+  soHieuTSCD: string;
+  ghiChu: string;
+}
+
+export interface AssetHistoryItem {
+  maLog: number;
+  maNhanVien: string | null;
+  hoTen: string | null;
+  thoiGian: string;
+  hanhDong: string;
+  trangThai: string | null;
+  chiTiet: string | null;
 }
 
 export interface AssetList {

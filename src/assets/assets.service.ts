@@ -252,7 +252,7 @@ export class AssetsService {
   async remove(maTaiSan: string, user: AuthUser) {
     const [result] = await this.db.execute<ResultSetHeader>(
       `UPDATE TAI_SAN
-       SET TrangThai = 'HONG'
+       SET TrangThai = 'THANH_LY'
        WHERE MaTaiSan = ?`,
       [maTaiSan],
     );
@@ -267,7 +267,7 @@ export class AssetsService {
       maTaiSan,
       `Dua tai san ${maTaiSan} vao muc thanh ly`,
     );
-    return { message: 'Asset marked as inactive successfully' };
+    return { message: 'Asset marked as liquidated successfully' };
   }
 
   async finalizeRemove(maTaiSan: string, user: AuthUser) {
@@ -278,24 +278,17 @@ export class AssetsService {
 
       const [assetRows] = await connection.execute<RowDataPacket[]>(
         'SELECT MaTaiSan FROM TAI_SAN WHERE MaTaiSan = ? AND TrangThai = ? LIMIT 1',
-        [maTaiSan, 'HONG'],
+        [maTaiSan, 'THANH_LY'],
       );
 
       if (!assetRows[0]) {
         throw new NotFoundException('Liquidated asset not found');
       }
 
-      await connection.execute(
-        'DELETE FROM CHI_TIET_PHIEU_DIEU_CHUYEN WHERE MaTaiSan = ?',
-        [maTaiSan],
-      );
-      await connection.execute(
-        'DELETE FROM CHI_TIET_PHIEU_KIEM_KE WHERE MaTaiSan = ?',
-        [maTaiSan],
-      );
-
       const [result] = await connection.execute<ResultSetHeader>(
-        'DELETE FROM TAI_SAN WHERE MaTaiSan = ?',
+        `UPDATE TAI_SAN
+         SET TrangThai = 'THANH_LY'
+         WHERE MaTaiSan = ?`,
         [maTaiSan],
       );
 
@@ -306,13 +299,13 @@ export class AssetsService {
       await this.writeAuditWithConnection(
         connection,
         user.maNhanVien,
-        'ASSET_FINAL_DELETE',
+        'ASSET_LIQUIDATION_COMPLETED',
         maTaiSan,
-        `Xoa tai san ${maTaiSan} sau khi thanh ly`,
+        `Hoan tat thanh ly tai san ${maTaiSan}`,
       );
       await connection.commit();
 
-      return { message: 'Asset permanently removed successfully' };
+      return { message: 'Asset liquidation completed successfully' };
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -500,8 +493,8 @@ export class AssetsService {
                   COALESCE(SUM(ts.NguyenGia), 0) AS totalOriginalValue,
                   COALESCE(SUM(ts.HaoMonLuyKe), 0) AS totalDepreciationValue,
                   COALESCE(SUM(ts.GiaTriConLai), 0) AS totalRemainingValue,
-                  SUM(CASE WHEN ts.TrangThai = 'HONG' THEN 1 ELSE 0 END) AS liquidatedAssets,
-                  SUM(CASE WHEN ts.TrangThai <> 'HONG' THEN 1 ELSE 0 END) AS activeAssets
+                  SUM(CASE WHEN ts.TrangThai = 'THANH_LY' THEN 1 ELSE 0 END) AS liquidatedAssets,
+                  SUM(CASE WHEN ts.TrangThai <> 'THANH_LY' THEN 1 ELSE 0 END) AS activeAssets
            FROM TAI_SAN ts
            ${whereSql}`,
           params,

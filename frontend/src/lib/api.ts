@@ -1,9 +1,5 @@
 import type {
   ApprovalItem,
-  Asset,
-  AssetCategory,
-  AssetList,
-  AssetReport,
   AuditLogList,
   AuthUser,
   DashboardOverview,
@@ -63,21 +59,6 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
-async function requestBlob(path: string, token = getStoredToken()) {
-  const headers = new Headers();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
-  const response = await fetch(`${API_BASE}${path}`, { headers });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(body || `HTTP ${response.status}`);
-  }
-
-  return response.blob();
-}
-
 export const api = {
   login(email: string, matKhau: string) {
     return request<LoginResult>(
@@ -103,117 +84,6 @@ export const api = {
 
   dashboard() {
     return request<DashboardOverview>('/dashboard/overview');
-  },
-
-  assets(filters: {
-    search?: string;
-    maLoai?: string;
-    maPhongBan?: string;
-    trangThai?: string;
-  } = {}) {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
-    });
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return request<AssetList>(`/assets${query}`);
-  },
-
-  assetCategories() {
-    return request<AssetCategory[]>('/assets/meta/categories');
-  },
-
-  assetReport(filters: {
-    search?: string;
-    maLoai?: string;
-    maPhongBan?: string;
-    trangThai?: string;
-  } = {}) {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
-    });
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return request<AssetReport>(`/assets/report${query}`);
-  },
-
-  assetHistory(maTaiSan: string) {
-    return request<
-      Array<{
-        maLog: number;
-        maNhanVien: string | null;
-        hoTen: string | null;
-        thoiGian: string;
-        hanhDong: string;
-        trangThai: string | null;
-        chiTiet: string | null;
-      }>
-    >(`/assets/history/${encodeURIComponent(maTaiSan)}`);
-  },
-
-  createAsset(payload: Partial<Asset> & { maTaiSan: string; tenTaiSan: string }) {
-    return request<Asset>('/assets', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  },
-
-  updateAsset(maTaiSan: string, payload: Partial<Asset>) {
-    return request<Asset>(`/assets/${encodeURIComponent(maTaiSan)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    });
-  },
-
-  deleteAsset(maTaiSan: string) {
-    return request<{ message: string }>(
-      `/assets/${encodeURIComponent(maTaiSan)}`,
-      { method: 'DELETE' },
-    );
-  },
-
-  finalizeAsset(maTaiSan: string) {
-    return request<{ message: string }>(
-      `/assets/${encodeURIComponent(maTaiSan)}/finalize`,
-      { method: 'DELETE' },
-    );
-  },
-
-  assetImportTemplate() {
-    return requestBlob('/assets/import-template');
-  },
-
-  exportAssets(filters: {
-    search?: string;
-    maLoai?: string;
-    maPhongBan?: string;
-    trangThai?: string;
-  } = {}) {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
-    });
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return requestBlob(`/assets/export${query}`);
-  },
-
-  importAssets(file: File) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    return request<{
-      message: string;
-      success: number;
-      failed: number;
-      errors: Array<{ row: number; message: string }>;
-    }>('/assets/import', {
-      method: 'POST',
-      body: formData,
-      headers: {},
-    });
   },
 
   employees(search = '') {

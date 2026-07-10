@@ -92,8 +92,10 @@ export const assetList: AssetList = {
 export const assetReport: AssetReport = {
   summary: {
     totalAssets: assets.length,
-    activeAssets: assets.filter((asset) => asset.trangThai !== 'HONG').length,
-    liquidatedAssets: assets.filter((asset) => asset.trangThai === 'HONG').length,
+    activeAssets: assets.filter((asset) => asset.trangThai !== 'THANH_LY')
+      .length,
+    liquidatedAssets: assets.filter((asset) => asset.trangThai === 'THANH_LY')
+      .length,
     totalOriginalValue: assets.reduce((sum, asset) => sum + asset.nguyenGia, 0),
     totalDepreciationValue: assets.reduce(
       (sum, asset) => sum + asset.haoMonLuyKe,
