@@ -36,6 +36,7 @@ import type {
   Department,
   Employee,
   EmployeeForm,
+  LoginResult,
   NotificationItem,
   Permission,
   Role,
@@ -48,7 +49,7 @@ import { formatCurrency, formatCurrencyShort, formatDate, toDepreciationPercent 
 export function LoginScreen({
   onSuccess,
 }: {
-  onSuccess: (result: { token: string; user: AuthUser }) => void;
+  onSuccess: (result: LoginResult) => void;
 }) {
   const [email, setEmail] = useState('hieutruong@ctu.edu.vn');
   const [password, setPassword] = useState('123456');
@@ -63,7 +64,7 @@ export function LoginScreen({
 
     try {
       const result = await api.login(email, password);
-      onSuccess({ token: result.accessToken, user: result.user });
+      onSuccess(result);
     } catch {
       setError('Khong dang nhap duoc API hien tai');
     } finally {
@@ -118,7 +119,13 @@ export function LoginScreen({
           </button>
           <button
             className="secondary-button"
-            onClick={() => onSuccess({ token: 'demo-token', user: demo.demoUser })}
+            onClick={() =>
+              onSuccess({
+                accessToken: 'demo-token',
+                tokenType: 'Bearer',
+                user: demo.demoUser,
+              })
+            }
             type="button"
           >
             Mo giao dien demo
@@ -128,3 +135,5 @@ export function LoginScreen({
     </main>
   );
 }
+
+export default LoginScreen;

@@ -30,16 +30,16 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
-import { api, clearStoredToken, getStoredToken, setStoredToken } from '../lib/api';
+import { api } from '../lib/api';
 import { assetsApi } from '../lib/apis/assetsApi';
 import * as demo from '../lib/mockData';
 import { toDepreciationPercent } from '../lib/format';
+import { useAuth } from '../contexts/AuthContext';
 import { AssetDetailModal } from './assets/AssetDetailModal';
 import { AssetModal } from './assets/AssetModal';
 import { EmployeeModal } from './EmployeeModal';
 import { Sidebar } from './Sidebar';
 import { Toast } from './Toast';
-import { LoginScreen } from '../pages/LoginScreen';
 import { DashboardPage } from '../pages/DashboardPage';
 import { AssetReportPage } from '../pages/assets/AssetReportPage';
 import { AssetsPage } from '../pages/assets/AssetsPage';
@@ -79,16 +79,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { key: 'dashboard', label: 'Tong quan', icon: LayoutDashboard },
-  { key: 'assets', label: 'Tai san', icon: PackageSearch },
-  { key: 'assetReport', label: 'Bao cao tai san', icon: BarChart3 },
-  { key: 'employees', label: 'Nhan vien', icon: Users },
-  { key: 'roles', label: 'Vai tro & quyen', icon: ShieldCheck },
-  { key: 'approvals', label: 'Ky duyet', icon: ClipboardCheck },
-  { key: 'notifications', label: 'Thong bao', icon: Bell },
-  { key: 'settings', label: 'Cau hinh', icon: Settings },
-  { key: 'audit', label: 'Giam sat log', icon: FileClock },
-  { key: 'profile', label: 'Tai khoan', icon: User },
+  { key: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+  { key: 'assets', label: 'Tài sản', icon: PackageSearch },
+  { key: 'assetReport', label: 'Báo cáo tài sản', icon: BarChart3 },
+  { key: 'employees', label: 'Nhân viên', icon: Users },
+  { key: 'roles', label: 'Vai trò & quyền', icon: ShieldCheck },
+  { key: 'approvals', label: 'Ký duyệt', icon: ClipboardCheck },
+  { key: 'notifications', label: 'Thông báo', icon: Bell },
+  { key: 'settings', label: 'Cấu hình', icon: Settings },
+  { key: 'audit', label: 'Giám sát log', icon: FileClock },
+  { key: 'profile', label: 'Tài khoản', icon: User },
 ];
 
 const emptyEmployee: EmployeeForm = {
@@ -120,9 +120,12 @@ const emptyAsset: AssetForm = {
   ghiChu: '',
 };
 
+function buildAssetQrCode(maTaiSan: string) {
+  return maTaiSan.trim() ? `QR-${maTaiSan.trim()}` : '';
+}
+
 export function AppContent() {
-  const [token, setToken] = useState(getStoredToken());
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user, logout } = useAuth();
   const [view, setView] = useState<ViewKey>('dashboard');
   const [apiMode, setApiMode] = useState<ApiMode>('api');
   const [loading, setLoading] = useState(false);
@@ -178,29 +181,6 @@ export function AppContent() {
     window.addEventListener('keydown', closeSidebarWithEscape);
     return () => window.removeEventListener('keydown', closeSidebarWithEscape);
   }, []);
-
-  useEffect(() => {
-    if (!token) {
-      return;
-    }
-
-    if (token === 'demo-token') {
-      setUser(demo.demoUser);
-      setApiMode('demo');
-      return;
-    }
-
-    api
-      .me()
-      .then((profile) => {
-        setUser(profile);
-        setApiMode('api');
-      })
-      .catch(() => {
-        clearStoredToken();
-        setToken(null);
-      });
-  }, [token]);
 
   useEffect(() => {
     if (user) {
@@ -313,10 +293,6 @@ export function AppContent() {
         setAuditLogs(logs.data);
       }
 
-      if (nextView === 'profile') {
-        setUser(await api.me());
-      }
-
       setApiMode('api');
     } catch {
       loadDemoView(nextView);
@@ -351,20 +327,6 @@ export function AppContent() {
     if (nextView === 'notifications') setNotifications(demo.notifications);
     if (nextView === 'settings') setSettings(demo.settings);
     if (nextView === 'audit') setAuditLogs(demo.auditLogs.data);
-  }
-
-  function handleLoginSuccess(result: { token: string; user: AuthUser }) {
-    setStoredToken(result.token);
-    setToken(result.token);
-    setUser(result.user);
-    setView('dashboard');
-  }
-
-  function logout() {
-    clearStoredToken();
-    setToken(null);
-    setUser(null);
-    setApiMode('api');
   }
 
   function openCreateAsset() {
@@ -408,6 +370,62 @@ export function AppContent() {
     }
   }
 
+  async function scanAssetByCode(decodedText: string) {
+    const keyword = decodedText.trim();
+    if (!keyword) {
+      setToast('Ma QR khong hop le');
+      return false;
+    }
+
+    const findLocalAsset = () => {
+      const normalizedKeyword = keyword.toLowerCase();
+      const assetCode = normalizedKeyword.startsWith('qr-')
+        ? normalizedKeyword.slice(3)
+        : normalizedKeyword;
+
+      return assets.find(
+        (asset) =>
+          asset.maTaiSan.toLowerCase() === normalizedKeyword ||
+          asset.maTaiSan.toLowerCase() === assetCode ||
+          asset.maQR?.toLowerCase() === normalizedKeyword ||
+          asset.soHieuTSCD?.toLowerCase() === normalizedKeyword,
+      );
+    };
+
+    try {
+      const matchedAsset = await assetsApi.lookup(keyword);
+      setAssets((current) => {
+        const exists = current.some(
+          (asset) => asset.maTaiSan === matchedAsset.maTaiSan,
+        );
+
+        if (exists) {
+          return current.map((asset) =>
+            asset.maTaiSan === matchedAsset.maTaiSan ? matchedAsset : asset,
+          );
+        }
+
+        return [matchedAsset, ...current];
+      });
+      setAssetSearch(keyword);
+
+      await openAssetDetail(matchedAsset);
+      setToast(`Da quet ma: ${keyword}`);
+      return true;
+    } catch {
+      const localAsset = findLocalAsset();
+      if (localAsset) {
+        setAssetSearch(keyword);
+        await openAssetDetail(localAsset);
+        setToast(`Da quet ma: ${keyword}`);
+        return true;
+      }
+
+      setToast(`Da doc ma ${keyword}, nhung khong tim thay tai san`);
+      return false;
+    }
+  }
+
   function buildAssetPayload() {
     const nguyenGia = Number(assetForm.nguyenGia || 0);
     const haoMonPercent = Math.min(
@@ -418,7 +436,7 @@ export function AppContent() {
 
     return {
       maTaiSan: assetForm.maTaiSan.trim(),
-      maQR: assetForm.maQR || undefined,
+      maQR: assetForm.maQR || buildAssetQrCode(assetForm.maTaiSan) || undefined,
       tenTaiSan: assetForm.tenTaiSan.trim(),
       serial: assetForm.serial || undefined,
       model: assetForm.model || undefined,
@@ -464,7 +482,9 @@ export function AppContent() {
       setToast('Da dua tai san vao muc thanh ly');
       setAssets((current) =>
         current.map((asset) =>
-          asset.maTaiSan === maTaiSan ? { ...asset, trangThai: 'HONG' } : asset,
+          asset.maTaiSan === maTaiSan
+            ? { ...asset, trangThai: 'THANH_LY' }
+            : asset,
         ),
       );
     } catch {
@@ -688,11 +708,15 @@ export function AppContent() {
   }
 
   if (!user) {
-    return <LoginScreen onSuccess={handleLoginSuccess} />;
+    return null;
   }
 
   return (
-    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div
+      className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${
+        sidebarOpen ? 'sidebar-open-mobile' : ''
+      }`}
+    >
       <Sidebar
         currentView={view}
         isCollapsed={sidebarCollapsed}
@@ -710,16 +734,16 @@ export function AppContent() {
         <header className="topbar">
           <button
             aria-expanded={sidebarOpen}
-            aria-label={sidebarOpen ? 'Dong menu' : 'Mo menu'}
+            aria-label={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
             className="icon-button mobile-only"
             onClick={() => setSidebarOpen((current) => !current)}
-            title={sidebarOpen ? 'Dong menu' : 'Mo menu'}
+            title={sidebarOpen ? 'Đóng menu' : 'Mở menu'}
             type="button"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <div>
-            <p className="eyebrow">Phan he System Lead</p>
+            <p className="eyebrow">Phân hệ System Lead</p>
             <h1>{navItems.find((item) => item.key === view)?.label}</h1>
           </div>
           <div className="topbar-actions">
@@ -727,7 +751,7 @@ export function AppContent() {
             <button
               className="icon-button"
               onClick={() => void loadView(view)}
-              title="Tai lai"
+              title="Tải lại"
               type="button"
             >
               <RefreshCw size={18} />
@@ -743,7 +767,7 @@ export function AppContent() {
             <button
               className="icon-button danger"
               onClick={logout}
-              title="Dang xuat"
+              title="Đăng xuất"
               type="button"
             >
               <LogOut size={18} />
@@ -778,6 +802,7 @@ export function AppContent() {
               onExport={() => void exportAssetsExcel()}
               onImport={(file) => void importAssetsExcel(file)}
               onRefresh={() => void loadView('assets')}
+              onScanAsset={scanAssetByCode}
             />
           )}
           {view === 'assetReport' && (
@@ -845,7 +870,7 @@ export function AppContent() {
         </main>
 
         <footer className="footer">
-          <span>Quan ly tai san QR</span>
+          <span>Quản lý tài sản QR</span>
           <span>Nguyen Thi Huynh Nhu - B2204960</span>
         </footer>
       </div>

@@ -35,7 +35,7 @@ export function AssetDetailModal({
   onEdit: () => void;
 }) {
   const qrValue = asset.maQR ?? asset.maTaiSan;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrValue)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=18&data=${encodeURIComponent(qrValue)}`;
 
   return (
     <div className="modal-backdrop">
@@ -81,6 +81,7 @@ export function AssetDetailModal({
           <aside className="qr-panel">
             <img alt={`QR ${asset.maTaiSan}`} src={qrUrl} />
             <strong>{qrValue}</strong>
+            <span>In hoac mo ma nay tren thiet bi khac de quet.</span>
           </aside>
         </div>
 

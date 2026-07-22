@@ -14,6 +14,8 @@ interface AssetFilters {
   maLoai?: string;
   maPhongBan?: string;
   trangThai?: string;
+  page?: number;
+  limit?: number;
 }
 
 function buildAssetQuery(filters: AssetFilters = {}) {
@@ -79,6 +81,10 @@ export const assetsApi = {
 
   categories() {
     return request<AssetCategory[]>('/assets/meta/categories');
+  },
+
+  lookup(code: string) {
+    return request<Asset>(`/assets/lookup/${encodeURIComponent(code)}`);
   },
 
   report(filters: AssetFilters = {}) {
