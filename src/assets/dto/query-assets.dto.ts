@@ -15,8 +15,21 @@ export class QueryAssetsDto {
   maPhongBan?: string;
 
   @IsOptional()
-  @IsIn(['HOAT_DONG', 'BAO_TRI', 'HONG'])
-  trangThai?: 'HOAT_DONG' | 'BAO_TRI' | 'HONG';
+  @IsIn([
+    'HOAT_DONG',
+    'BAO_TRI',
+    'HONG',
+    'DANG_LUAN_CHUYEN',
+    'DANG_SU_DUNG',
+    'THANH_LY',
+  ])
+  trangThai?:
+    | 'HOAT_DONG'
+    | 'BAO_TRI'
+    | 'HONG'
+    | 'DANG_LUAN_CHUYEN'
+    | 'DANG_SU_DUNG'
+    | 'THANH_LY';
 
   @IsOptional()
   @Type(() => Number)

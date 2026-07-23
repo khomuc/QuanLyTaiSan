@@ -100,6 +100,12 @@ export class AssetsController {
     return this.assetsService.history(maTaiSan);
   }
 
+  @Get('lookup/:code')
+  @Permissions('ASSET_VIEW')
+  lookupByCode(@Param('code') code: string) {
+    return this.assetsService.lookupByCode(code);
+  }
+
   @Get(':maTaiSan')
   @Permissions('ASSET_VIEW')
   findOne(@Param('maTaiSan') maTaiSan: string) {

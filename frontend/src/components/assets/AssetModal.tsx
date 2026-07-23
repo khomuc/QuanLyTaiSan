@@ -40,6 +40,9 @@ export function AssetModal({
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const suggestedQrCode = form.maTaiSan.trim()
+    ? `QR-${form.maTaiSan.trim()}`
+    : '';
   const nguyenGia = Number(form.nguyenGia || 0);
   const haoMonPercent = Math.min(100, Math.max(0, Number(form.haoMonLuyKe || 0)));
   const giaTriConLai = Math.max(
@@ -87,9 +90,13 @@ export function AssetModal({
           <label>
             Ma QR
             <input
+              placeholder={suggestedQrCode || 'Tu dong tao theo ma tai san'}
               onChange={(event) => onChange({ ...form, maQR: event.target.value })}
               value={form.maQR}
             />
+            <span className="field-hint">
+              Bo trong de he thong tu tao: {suggestedQrCode || 'QR-MaTaiSan'}
+            </span>
           </label>
           <label>
             So hieu TSCD

@@ -150,6 +150,39 @@ export class AssetsService {
     return this.mapAsset(rows[0]);
   }
 
+  async lookupByCode(code: string) {
+    const keyword = code.trim();
+    const assetCode = keyword.toUpperCase().startsWith('QR-')
+      ? keyword.slice(3)
+      : keyword;
+
+    const [rows] = await this.db.execute<AssetRow[]>(
+      `SELECT ts.MaTaiSan AS maTaiSan, ts.MaQR AS maQR, ts.TenTaiSan AS tenTaiSan,
+              ts.Serial AS serial, ts.Model AS model, ts.MaLoai AS maLoai,
+              lts.TenLoai AS tenLoai, ts.NguyenGia AS nguyenGia,
+              ts.HaoMonLuyKe AS haoMonLuyKe, ts.GiaTriConLai AS giaTriConLai,
+              ts.NgayNhap AS ngayNhap, ts.MaPhongBanHienTai AS maPhongBanHienTai,
+              pb.TenPhongBan AS tenPhongBan, ts.TrangThai AS trangThai,
+              ts.SoHieuTSCD AS soHieuTSCD, ts.GhiChu AS ghiChu,
+              ts.CreatedAt AS createdAt, ts.UpdatedAt AS updatedAt
+       FROM TAI_SAN ts
+       LEFT JOIN LOAI_TAI_SAN lts ON lts.MaLoai = ts.MaLoai
+       LEFT JOIN PHONG_BAN pb ON pb.MaPhongBan = ts.MaPhongBanHienTai
+       WHERE ts.MaTaiSan = ?
+          OR ts.MaQR = ?
+          OR ts.SoHieuTSCD = ?
+          OR ts.MaTaiSan = ?
+       LIMIT 1`,
+      [keyword, keyword, keyword, assetCode],
+    );
+
+    if (!rows[0]) {
+      throw new NotFoundException('Asset not found for scanned QR');
+    }
+
+    return this.mapAsset(rows[0]);
+  }
+
   async history(maTaiSan: string) {
     const [rows] = await this.db.execute<RowDataPacket[]>(
       `SELECT l.MaLog AS maLog, l.MaNhanVien AS maNhanVien, nv.HoTen AS hoTen,
@@ -168,7 +201,9 @@ export class AssetsService {
   }
 
   async create(dto: CreateAssetDto, user: AuthUser) {
-    await this.ensureUniqueAssetFields(dto);
+    const maQR = this.nullIfBlank(dto.maQR) ?? this.buildAssetQrCode(dto.maTaiSan);
+
+    await this.ensureUniqueAssetFields({ ...dto, maQR });
 
     const haoMonLuyKe = dto.haoMonLuyKe ?? 0;
     const giaTriConLai = dto.giaTriConLai ?? dto.nguyenGia - haoMonLuyKe;
@@ -180,7 +215,7 @@ export class AssetsService {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         dto.maTaiSan,
-        this.nullIfBlank(dto.maQR),
+        maQR,
         dto.tenTaiSan,
         this.nullIfBlank(dto.serial),
         this.nullIfBlank(dto.model),
@@ -605,6 +640,10 @@ export class AssetsService {
         throw new ConflictException(`${column} already exists`);
       }
     }
+  }
+
+  private buildAssetQrCode(maTaiSan: string) {
+    return `QR-${maTaiSan.trim()}`;
   }
 
   private assignNullable(

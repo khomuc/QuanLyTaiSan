@@ -1,6 +1,7 @@
 ﻿import {
   BarChart3,
   Bell,
+  Camera,
   Check,
   ClipboardCheck,
   Edit3,
@@ -45,6 +46,7 @@ import type {
 import { EmptyState, StatusPill, Toggle } from '../../components/ui';
 import { formatCurrency, formatCurrencyShort, formatDate, toDepreciationPercent } from '../../lib/format';
 import { KpiTile } from '../DashboardPage';
+import { QRScannerModal } from '../../components/QRScannerModal';
 
 export function AssetsPage({
   assets,
@@ -67,6 +69,7 @@ export function AssetsPage({
   onExport,
   onImport,
   onRefresh,
+  onScanAsset,
 }: {
   assets: Asset[];
   categories: AssetCategory[];
@@ -88,7 +91,9 @@ export function AssetsPage({
   onExport: () => void;
   onImport: (file: File) => void;
   onRefresh: () => void;
+  onScanAsset: (decodedText: string) => Promise<boolean>;
 }) {
+  const [showScanner, setShowScanner] = useState(false);
   const activeAssets = assets.filter((asset) => asset.trangThai !== 'THANH_LY');
   const liquidatedAssets = assets.filter(
     (asset) => asset.trangThai === 'THANH_LY',
@@ -105,6 +110,40 @@ export function AssetsPage({
       onImport(file);
       event.target.value = '';
     }
+  }
+
+  function playScanBeep(isError = false) {
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+
+      if (!AudioContextClass) {
+        return;
+      }
+
+      const audioContext = new AudioContextClass();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.type = isError ? 'square' : 'sine';
+      oscillator.frequency.value = isError ? 300 : 800;
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      oscillator.start();
+      window.setTimeout(() => {
+        oscillator.stop();
+        void audioContext.close();
+      }, isError ? 300 : 120);
+    } catch {
+      // Browser audio permission can block this; scanning still works.
+    }
+  }
+
+  async function handleScanSuccess(decodedText: string) {
+    const found = await onScanAsset(decodedText);
+    playScanBeep(!found);
   }
 
   return (
@@ -162,6 +201,14 @@ export function AssetsPage({
         <button className="primary-button" onClick={onCreate} type="button">
           <Plus size={18} />
           Them tai san
+        </button>
+        <button
+          className="secondary-button"
+          onClick={() => setShowScanner(true)}
+          type="button"
+        >
+          <Camera size={18} />
+          Quet QR
         </button>
         <button
           className="secondary-button"
@@ -339,6 +386,13 @@ export function AssetsPage({
           <EmptyState text="Chua co tai san nao trong muc thanh ly" />
         )}
       </section>
+
+      {showScanner && (
+        <QRScannerModal
+          onClose={() => setShowScanner(false)}
+          onScanSuccess={(decodedText) => void handleScanSuccess(decodedText)}
+        />
+      )}
     </div>
   );
 }
